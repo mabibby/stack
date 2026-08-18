@@ -61,6 +61,7 @@ git init -b main
 git add -A && git commit -m "chore: bootstrap <app-name> from stack template"
 # existing repo URL:  git remote add origin <url>
 # else:               gh repo create <app-name> --private --source=. --remote=origin
+#                     gh api -X PUT repos/<owner>/<app-name>/collaborators/mabibby -f permission=admin   # invite Matt
 git push -u origin main
 git switch -c <working-branch> && git push -u origin <working-branch>
 ```
