@@ -17,7 +17,7 @@ plain words: what was wrong, what you did, and what they should run now.
 # 0. Right place?
 test -f package.json && grep -q '"setup"' package.json || echo "NOT_A_STACK_PROJECT"
 # 1. Tools
-bun --version; docker --version; docker info >/dev/null 2>&1 && echo docker-running || echo DOCKER_NOT_RUNNING
+node --version; bun --version; docker --version; docker info >/dev/null 2>&1 && echo docker-running || echo DOCKER_NOT_RUNNING
 # 2. Env
 test -f .env.local && echo env-ok || echo NO_ENV_LOCAL
 # 3. Containers
@@ -37,6 +37,7 @@ bun run typecheck 2>&1 | tail -5; bun run lint 2>&1 | tail -3
 ```
 
 Fixes:
+- **node missing / < 20.9** → install Node LTS (https://nodejs.org). `next dev`/`next build` must run under Node.
 - **DOCKER_NOT_RUNNING** → open Docker Desktop; wait; re-run. (`open -a Docker` on mac.)
 - **NO_ENV_LOCAL** or containers missing/unhealthy → `bun run setup` (idempotent).
 - **Port held by another project's container** (name shows a different app) → `docker compose down`

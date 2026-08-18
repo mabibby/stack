@@ -31,8 +31,10 @@ Architecture reference (read now, briefly): `${CLAUDE_PLUGIN_ROOT}/references/ar
 Run and interpret:
 ```bash
 docker info >/dev/null 2>&1 && echo docker-ok || echo docker-missing
-bun --version; git --version; gh --version; gh auth status
+node --version; bun --version; git --version; gh --version; gh auth status
 ```
+- Node missing or < 20.9 → install Node LTS from https://nodejs.org (or `brew install node`). Next.js runs on
+  Node; Bun is the package manager/script runner and runs the worker.
 - Docker missing/not running → "Open Docker Desktop and wait until it says Running, then tell me" (if not
   installed: https://www.docker.com/products/docker-desktop/ — install, open once, then come back).
 - bun missing → `curl -fsSL https://bun.sh/install | bash` then reopen the terminal.

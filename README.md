@@ -25,16 +25,17 @@ Architecture and conventions: [`plugins/stack/references/architecture.md`](plugi
 ## Install (once, ~10 minutes)
 
 1. **Docker Desktop** — https://www.docker.com/products/docker-desktop/ — install, open it, leave it running.
-2. **Bun** — in Terminal: `curl -fsSL https://bun.sh/install | bash` then open a new Terminal window.
-3. **Git + GitHub CLI** — `brew install git gh` (install [Homebrew](https://brew.sh) first if `brew` is missing), then `gh auth login` and follow the browser steps.
-4. **Claude Code** — https://docs.claude.com/en/docs/claude-code/overview (`npm i -g @anthropic-ai/claude-code` or the desktop app), then run `claude` once and sign in.
-5. **This plugin** — inside `claude`:
+2. **Node.js LTS** — https://nodejs.org (the "LTS" download). Next.js runs on Node.
+3. **Bun** — in Terminal: `curl -fsSL https://bun.sh/install | bash` then open a new Terminal window.
+4. **Git + GitHub CLI** — `brew install git gh` (install [Homebrew](https://brew.sh) first if `brew` is missing), then `gh auth login` and follow the browser steps.
+5. **Claude Code** — https://docs.claude.com/en/docs/claude-code/overview (`npm i -g @anthropic-ai/claude-code` or the desktop app), then run `claude` once and sign in.
+6. **This plugin** — inside `claude`:
    ```
    /plugin marketplace add mabibby/stack
    /plugin install stack@mabibby-stack
    ```
    Restart Claude Code. Type `/stack:` and you should see the six commands.
-6. Recommended companions (inside `claude`): `/plugin install playwright@claude-plugins-official`
+7. Recommended companions (inside `claude`): `/plugin install playwright@claude-plugins-official`
    (lets Claude click through your app), `/plugin install context7@claude-plugins-official`
    (up-to-date library docs), and the Railway plugin when you deploy.
 

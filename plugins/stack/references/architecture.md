@@ -27,7 +27,7 @@ product thinking is where the effort goes. Companion doc: `next16-cheatsheet.md`
 
 | Concern | Choice | Notes |
 |---|---|---|
-| Runtime + package manager | **Bun** | `bun install`, `bun run`, `bun test`, `bunx`. Not npm/pnpm/yarn. |
+| Package manager / scripts | **Bun** (+ **Node LTS** installed) | `bun install`, `bun run`, `bun test`, `bunx`. Not npm/pnpm/yarn. Next itself runs under Node (its bin shebang); Bun runs the worker and scripts. |
 | Language | **TypeScript** (strict) | `type` over `interface`; no `any`; explicit return types on domain functions. |
 | Framework | **Next.js** (app router, latest) | Turbopack. RSC + server actions. `proxy.ts` not `middleware.ts`. See cheat sheet. |
 | Database | **Postgres** (18 locally, Railway in prod) | One DB for app data, auth tables and job queues. |

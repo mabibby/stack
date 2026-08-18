@@ -4,7 +4,7 @@ Built on the **stack** template: Bun · Next.js · Postgres/Drizzle · better-au
 
 ## Run it locally
 
-Prereqs (once): [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running), [Bun](https://bun.sh), git.
+Prereqs (once): [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running), [Node LTS](https://nodejs.org), [Bun](https://bun.sh), git.
 
 ```bash
 bun install
