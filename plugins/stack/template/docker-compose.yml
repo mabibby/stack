@@ -1,0 +1,80 @@
+# Local-dev infrastructure ONLY. The app itself runs natively (`bun run dev`,
+# `bun run dev:worker`) for fast reloads; these containers provide the stateful
+# bits. Production equivalents: Railway Postgres, a Railway bucket, Resend.
+#
+# Ports (change here AND in .env.local if they clash with another project):
+#   5432  Postgres            9000/9001  MinIO API / console
+#   1025  Mailpit SMTP        8025       Mailpit web UI
+
+name: __APP_NAME__
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: __APP_NAME__-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: __DB_NAME__
+      POSTGRES_PASSWORD: __DB_NAME__
+      POSTGRES_DB: __DB_NAME__
+    ports:
+      - "5432:5432"
+    volumes:
+      # Postgres 18 reshuffled the data layout — mount the parent dir so the
+      # image manages subdirectories itself.
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U __DB_NAME__ -d __DB_NAME__"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: __APP_NAME__-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: creates the dev bucket once MinIO is healthy, then exits.
+  create-bucket:
+    image: minio/mc:latest
+    container_name: __APP_NAME__-create-bucket
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minio minio-secret &&
+      mc mb --ignore-existing local/__APP_NAME__ &&
+      mc anonymous set none local/__APP_NAME__
+      "
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: __APP_NAME__-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8025/livez"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  minio-data:

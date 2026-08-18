@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run *)",
+      "Bash(bun test *)",
+      "Bash(bun add *)",
+      "Bash(bun install*)",
+      "Bash(bunx shadcn *)",
+      "Bash(bunx drizzle-kit *)",
+      "Bash(bunx biome *)",
+      "Bash(bunx @better-auth/cli *)",
+      "Bash(bunx playwright *)",
+      "Bash(docker compose *)",
+      "Bash(docker ps*)",
+      "Bash(docker logs *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push*)",
+      "Bash(git pull*)",
+      "Bash(git fetch*)",
+      "Bash(git branch*)",
+      "Bash(git checkout *)",
+      "Bash(git switch *)",
+      "Bash(git stash*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -s http://127.0.0.1:*)",
+      "Bash(railway *)",
+      "Bash(gh *)",
+      "mcp__plugin_playwright_playwright__*"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git reset --hard*)",
+      "Bash(bunx drizzle-kit push*)",
+      "Bash(bun run db:push*)"
+    ]
+  }
+}

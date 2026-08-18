@@ -1,0 +1,15 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "mabibby-stack",
+  "description": "Matt Bibby's opinionated way of building web apps with Claude Code: Bun + Next.js + Postgres/Drizzle + better-auth + pg-boss + shadcn, local infra in Docker, deployed to Railway. One command to start a new app, one to build a feature, one to ship.",
+  "owner": { "name": "Matt Bibby" },
+  "plugins": [
+    {
+      "name": "stack",
+      "description": "Bootstrap and build web apps the Matt way: /stack:new-app, /stack:feature, /stack:ship, /stack:db-change, /stack:deploy, /stack:doctor. Encodes the architecture so you can focus on product.",
+      "author": { "name": "Matt Bibby" },
+      "source": "./plugins/stack",
+      "category": "development"
+    }
+  ]
+}

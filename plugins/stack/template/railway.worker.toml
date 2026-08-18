@@ -1,0 +1,9 @@
+# Railway config for the WORKER service (pg-boss consumer). Same image as web.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+startCommand = "bun run worker"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
