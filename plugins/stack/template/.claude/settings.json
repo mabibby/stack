@@ -8,7 +8,7 @@
       "Bash(bunx shadcn *)",
       "Bash(bunx drizzle-kit *)",
       "Bash(bunx biome *)",
-      "Bash(bunx @better-auth/cli *)",
+      "Bash(bunx auth@latest *)",
       "Bash(bunx playwright *)",
       "Bash(docker compose *)",
       "Bash(docker ps*)",

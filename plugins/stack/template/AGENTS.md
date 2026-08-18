@@ -35,7 +35,7 @@ Tailwind v4 + shadcn/ui · react-hook-form + zod · Biome · Playwright + `bun t
 ## Rules
 
 1. **Schema changes go through Drizzle migrations.** Edit `src/lib/db/schema/*`, run `bun run db:generate --name <what_changed>`, then `bun run db:migrate`. NEVER `db:push`, never hand-edit `drizzle/*.sql`, never edit a migration that has been committed — write a new one.
-2. **Auth is server-side.** Pages/layouts use `requireSession()`; actions use `requireSessionAction()`; every DB query is scoped by `userId` (see `deleteNote`). Never trust ids from the client without a `userId` filter.
+2. **Auth is server-side, on every page and action.** Pages call `requireSession()` (the `(app)` layout does too, but layouts don't re-run on client navigation); actions call `requireSessionAction()`; every DB query is scoped by `userId` (see `deleteNote`). Never trust ids from the client without a `userId` filter.
 3. **URLs use `publicId`, never the numeric `id`.**
 4. **Anything slow, retryable or scheduled is a job**, not an inline `await` in a request: add to `QUEUES`, write a handler, `enqueue()` it. Emails to users other than the one waiting go through `QUEUES.SEND_EMAIL`.
 5. **Env vars**: never read `process.env` outside `src/lib/env.ts`. Never commit `.env.local`.

@@ -207,7 +207,9 @@ Public (browser) vars must be prefixed `NEXT_PUBLIC_`.
   `/verify` → `signIn.emailOtp`), magic link (`signIn.magicLink`), forgot/reset password. All emails
   arrive in Mailpit locally.
 - **Server**: `getSession()` (nullable), `requireSession()` (redirects), `requireSessionAction()` (throws).
-  `(app)/layout.tsx` already guards every route inside it. `proxy.ts` is not needed for auth.
+  `(app)/layout.tsx` guards every route inside it for UX, but layouts don't re-render on client-side
+  navigation — so **every page calls `requireSession()` and every action calls `requireSessionAction()`
+  itself** (cheap: cookie-cached). `proxy.ts` is not needed for auth.
 - **Client**: `useSession()` for display only, never for authorization.
 - **Authorization = the query.** Filter by `userId` (or membership) in the domain function itself.
   A missing row for another user's id is a `NotFoundError`, not a `ForbiddenError` (don't leak existence).
