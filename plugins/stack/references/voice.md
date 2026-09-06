@@ -13,7 +13,7 @@ think in screens, buttons and outcomes. Every skill follows these rules for what
 | env var, `.env.local`, secret | "a setting", "a key from <service>" (say exactly where to get it) |
 | lint, typecheck, CI | "the checks" |
 | deploy, Railway service | "put it online", "the live site" |
-| localhost:3000 | give the full clickable URL, and `open` it for them |
+| localhost:3000 | the app's real URL from `AGENTS.md` → Local URLs (each app has its own port), clickable, and `open` it for them |
 | stack trace / log dump | one sentence on what broke and what you're doing about it |
 
 Technical detail is fine **when they ask** ("how does that work?") — then explain simply, one layer at a time.
@@ -30,7 +30,7 @@ and mention the decision only if it affects what they'll see.
 
 ## Show, don't describe
 
-- After building or fixing anything visible: `open "http://localhost:3000/<the page>"` so their
+- After building or fixing anything visible: `open "<app-url>/<the page>"` (app-url from `AGENTS.md` → Local URLs) so their
   real browser shows it, **and** take a screenshot with Playwright MCP and `Read` the file so it
   appears in the conversation. Desktop width and phone width (390 px) for anything user-facing.
 - When something fails, say what they'll see ("the Save button will show an error") not what

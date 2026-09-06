@@ -6,7 +6,7 @@
   "scripts": {
     "setup": "bun run scripts/setup/dev.ts",
     "dev": "bun run scripts/dev.ts",
-    "dev:web": "next dev",
+    "dev:web": "next dev -p __PORT_WEB__",
     "dev:worker": "bun --watch worker/index.ts",
     "build": "next build",
     "start": "next start",

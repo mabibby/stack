@@ -1,86 +1,86 @@
 # stack — Matt's way of building web apps, packaged for Claude Code
 
-One plugin that turns "I want an app that does X" into a working, online product without you making
-technology decisions. It bootstraps every app from a proven template and gives Claude Code ten
-commands that encode the architecture, the workflow and the guard-rails.
+One toolkit that turns "I want an app that does X" into a working, online product without you making
+technology decisions. A `stack` command in Terminal creates apps; inside Claude Code, ten commands
+encode the architecture, the workflow and the guard-rails.
+
+## First time on a new Mac (10–30 minutes, mostly waiting)
+
+You need a Mac, a **Claude Max** subscription (Claude Code uses a lot; Pro runs out fast), and a
+GitHub account (free: https://github.com/signup). Everything else is installed for you.
+
+1. Open **Terminal**: press **Cmd + Space**, type `Terminal`, press **Enter**.
+2. Copy this whole line, paste it into Terminal, press **Enter**:
+   ```
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/mabibby/stack/main/install.sh)"
+   ```
+   It installs everything and tells you what it's doing. Expect these moments:
+   - **"Password:"** — type your Mac login password (nothing appears while you type) and press Enter.
+   - **A window about command-line tools** — click **Install**, then **Agree**, and wait.
+   - **Docker Desktop opens** — click **Accept**, then **Finish** / the recommended settings. Skip sign-in.
+   - **GitHub sign-in** — press Enter, a browser opens; type the 8-character code Terminal shows, click **Authorize**.
+   When it prints **✅ This Mac is ready**, quit Terminal (**Cmd + Q**) and open it again.
+3. Sign in to Claude Code once: type `claude`, press Enter, follow the sign-in, then type `/exit`.
+4. Tell Matt your GitHub username (the installer printed it).
+
+## Create an app
+
+In Terminal:
+```
+stack new my-first-app
+```
+(lowercase, hyphens for spaces). It creates the folder `~/projects/my-first-app`, gives the app its
+own ports, starts the local database, saves it privately on GitHub and invites Matt. It ends with
+two lines to copy-paste:
+```
+cd ~/projects/my-first-app
+claude
+```
+Then say **"start my app"** — it opens in your browser. From there, describe features.
+
+## Every day
+
+Open Terminal, then:
+```
+cd ~/projects/my-first-app
+claude
+```
+Inside Claude Code, talk in product words. You don't need to remember commands; Claude picks them.
 
 | You say… | Command | Claude does… |
 |---|---|---|
-| "set up my computer" | `/stack:setup` | installs everything a Mac needs, signs you in to GitHub (once) |
-| "new app called fitness-tracker" | `/stack:new-app` | scaffolds it, starts it, saves it to GitHub, proves it works in a browser |
 | "start my app" | `/stack:start` | gets it running and opens it in your browser |
-| "let users log a workout with a date and notes" | `/stack:feature` | writes a short spec, builds it the standard way, tests it, shows you screenshots |
-| "ship it" / "send it to Matt" | `/stack:ship` | runs all checks, saves, sends to Matt (never touches `main`) |
+| "let users log a workout with a date and notes" | `/stack:feature` | writes a short plan, builds it the standard way, tests it, shows you screenshots (desktop + phone) |
+| "ship it" / "send it to Matt" | `/stack:ship` | brings in Matt's latest, runs all checks, saves, sends (never touches `main`) |
 | "where are we?" | `/stack:status` | what's saved, what's sent, what Matt has merged, what's live |
 | "undo that" | `/stack:undo` | goes back safely, after telling you what will be lost |
 | "we also need to store the gym location" | `/stack:db-change` | changes what the app stores, safely |
 | "put it online" | `/stack:deploy` | Railway: web + worker + database + file storage, live URL |
 | "it's not working" | `/stack:doctor` | finds and fixes the usual local problems |
+| "new app called …" | `/stack:new-app` | same as `stack new`, from inside Claude |
+| "is my Mac set up?" | `/stack:setup` | checks, and re-runs the installer if needed |
 
-You don't have to remember the commands — describe what you want and Claude picks the right one.
+In Terminal: `stack ls` (your apps, their web addresses, which are running) · `stack new <name>` ·
+`stack update` (when Matt says there's a new version) · `stack doctor`.
+
+## Several apps at once
+
+Each app gets its own set of ports when it's created (the "slot" in `stack ls`), so two apps can run
+side by side with no clashes. Each has its own web address (`http://localhost:3000`, `3001`, …) and
+its own inbox for the emails it sends (`http://localhost:8025`, `8026`, …). Claude reads these from
+the app's `AGENTS.md`, so you never need to know them.
 
 ## What you get in every app
 
 Bun · TypeScript · Next.js (app router) · Postgres + Drizzle · better-auth (password, email code, magic
 link, optional invite-only sign-up) · pg-boss background jobs + worker · Tailwind + shadcn/ui ·
 react-hook-form + zod · Biome · Playwright + `bun test` · Docker Compose for local Postgres/MinIO/Mailpit ·
-Dockerfile + Railway config · guard-rails against pushing to `main`, force pushes and history rewriting.
-A worked example feature ("Notes") shows the pattern; it's removed when you build your first real one.
+one `bun run dev` for web + worker · Dockerfile + Railway config · guard-rails against pushing to
+`main`, force pushes and history rewriting. A worked example feature ("Notes") shows the pattern; it's
+removed when you build your first real one.
 
 Architecture and conventions: [`plugins/stack/references/architecture.md`](plugins/stack/references/architecture.md).
 How Claude talks to you: [`plugins/stack/references/voice.md`](plugins/stack/references/voice.md).
-
-## First time on a new Mac (about 30 minutes, mostly waiting)
-
-You need: a Mac, a **Claude Max** subscription (Claude Code uses a lot; Pro runs out fast), and an
-email address. Everything else is installed for you.
-
-1. **Install Claude Code (desktop app).** https://claude.com/claude-code → download the Mac app, open it,
-   sign in with your Claude account.
-2. **Install the command-line tools** (this gives us `git`). Press **Cmd+Space**, type `Terminal`, press
-   Enter. Paste this and press Enter, then click **Install** in the window that appears:
-   ```
-   xcode-select --install
-   ```
-   Wait until it says it finished (5–10 minutes). You can close Terminal.
-3. **Install this plugin.** In Claude Code, type each line and press Enter:
-   ```
-   /plugin marketplace add mabibby/stack
-   /plugin install stack@mabibby-stack
-   ```
-   Quit and reopen Claude Code. Type `/stack:` and you should see the commands.
-4. **Let Claude set up the rest.** Type:
-   ```
-   /stack:setup
-   ```
-   It installs Node, Bun, Docker Desktop, the GitHub tools and the companion plugins, and walks you
-   through signing in to GitHub. When your Mac asks for your password or to click Install, that's
-   expected — Claude will tell you what to click each time.
-5. Quit and reopen Claude Code one more time (so the new plugins load).
-
-## Your first app
-
-In Claude Code: **File → Open Folder** → choose the `projects` folder in your home folder (setup
-created it). Then type:
-```
-/stack:new-app fitness-tracker
-```
-Answer the one or two questions. When it says ready, your app is open in your browser at
-http://localhost:3000. **Then quit Claude Code and open it again inside the new app's folder**
-(File → Open Folder → projects → fitness-tracker). That's how Claude knows which app you're working on.
-
-From then on it's a loop: describe a feature → look at it in your browser → "ship it" → repeat.
-
-## Every day
-
-- **Open Claude Code in the app's folder.** Then "start my app" (or `/stack:start`). It runs while
-  the Claude Code window is open.
-- Describe what you want in product words: who does it, what they see, what changes. Claude shows a
-  short plan; say "go".
-- Look at the result in your browser (Claude opens the page and shows screenshots, desktop and phone).
-- "Ship it" saves your work and sends it to Matt. "Where are we?" tells you what's saved and sent.
-  "Undo that" goes back.
-- Something odd? "It's not working" runs the doctor.
 
 ## The working agreement
 
@@ -90,36 +90,40 @@ From then on it's a loop: describe a feature → look at it in your browser → 
 - Secrets live in `.env.local` (your Mac) and Railway variables (online) — never in the code.
 - Every feature ships with a browser test and has been clicked through, on desktop and phone width,
   before it's called done.
-- Anything that loses work or data (undo, resetting local test data) is explained first and needs
-  your "yes".
+- Anything that loses work or data (undo, resetting local test data) is explained first and needs your "yes".
 
 ## Accounts, money and who does what
 
 | Thing | Who | Notes |
 |---|---|---|
 | Claude Max | you | Claude Code usage. Pro will run out quickly. |
-| GitHub account | you | Free. Apps are private repos under your account; Matt is invited as admin. Tell Matt your username. |
-| Docker Desktop | you | Free for small businesses. |
-| Railway | you | Needed to put an app online. Hobby plan (paid, a few dollars a month) plus usage. Card required. |
+| GitHub account | you | Free. Apps are private repos under your account; Matt is invited as admin. |
+| Docker Desktop | you | Free for small businesses. Installed for you. |
+| Railway | you | Needed to put an app online. Hobby plan (a few dollars a month) plus usage. Card required. |
 | Domain + email sending (Resend) | Matt | Needs DNS. Until Matt sends you a key, the live app can only sign in with a password (no email codes or links). |
-| Merging to `main`, fixing anything the guard-rails block | Matt | |
+| Merging to `main`, anything the guard-rails block | Matt | |
 
-## When Matt updates the plugin
+## When Matt updates the toolkit
 
-In Claude Code type `/plugin update stack@mabibby-stack`, then quit and reopen it.
+In Terminal: `stack update`. Then quit and reopen Claude Code.
 
 ## For Matt: maintaining the template
 
-- The template app is `plugins/stack/template/` (placeholders `__APP_NAME__`, `__APP_TITLE__`,
-  `__DB_NAME__`, stamped by `scripts/new-app.sh`). To upgrade dependencies: stamp a copy, `bun update`,
-  run `bun run check` + `bun run test:e2e`, copy back `package.json`/`bun.lock` (re-placeholder the
-  lockfile name), regenerate `drizzle/` if the auth schema changed.
-- Skills: `plugins/stack/skills/*/SKILL.md`. Principles: `plugins/stack/references/`. Guard-rail hook:
-  `plugins/stack/hooks/hooks.json` → `scripts/guard.sh` (only active in folders whose `AGENTS.md` carries
-  the template marker, so your other repos are untouched). Git-level twin: `template/.githooks/pre-push`.
-- Pushing to `main` from a stack project on your own machine: `STACK_ALLOW_MAIN=1 git push origin main`.
-- Validate: `claude plugin validate .` · Release: bump `plugin.json` version, commit, push; the partner
-  runs `/plugin update`.
-- Local dev of the plugin: `/plugin marketplace add /path/to/this/repo` then install `stack@mabibby-stack`.
-- Test the whole thing the way the partner will: create a fresh macOS user account and follow only
-  "First time on a new Mac" above.
+- Layout: `install.sh` (one-line Mac setup; clones this repo to `~/.stack/repo`, links `bin/stack` into
+  `~/.local/bin`, adds the marketplace from that clone) · `bin/stack` (new/ls/update/doctor) ·
+  `plugins/stack/scripts/new-app.sh` (stamps the template, assigns a port slot, records it in
+  `~/.stack/apps.tsv`) · `plugins/stack/template/` (placeholders `__APP_NAME__`, `__APP_TITLE__`,
+  `__DB_NAME__`, `__PORT_SLOT__`, `__PORT_WEB__`, `__PORT_PG__`, `__PORT_MINIO__`,
+  `__PORT_MINIO_CONSOLE__`, `__PORT_SMTP__`, `__PORT_MAIL__`; slot k = 3000+k, 5432+k, 9000+2k, 9001+2k,
+  1025+k, 8025+k) · skills in `plugins/stack/skills/*/SKILL.md` · principles in `plugins/stack/references/`.
+- Guard-rail hook: `plugins/stack/hooks/hooks.json` → `scripts/guard.sh` (only active in folders whose
+  `AGENTS.md` carries the template marker). Git-level twin: `template/.githooks/pre-push`. Pushing to
+  `main` from a stack project on your own machine: `STACK_ALLOW_MAIN=1 git push origin main`.
+- Upgrade dependencies: stamp a copy (`new-app.sh <n> "<T>" <dir>` with `STACK_REGISTRY=/tmp/x`),
+  `bun update`, `bun run check` + `bun run test:e2e`, copy back `package.json`/`bun.lock`
+  (re-placeholder the lockfile name), regenerate `drizzle/` if the auth schema changed.
+- Validate: `claude plugin validate .` · Release: bump `plugin.json` version, commit, push to `main`;
+  the partner runs `stack update`.
+- Your own machine: `/plugin marketplace add /path/to/this/repo`, or run `install.sh` with
+  `STACK_REPO_URL=/path/to/this/repo` to get the `stack` command against your working copy.
+- Test like the partner: a fresh macOS user account, following only "First time on a new Mac".

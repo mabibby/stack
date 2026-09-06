@@ -9,14 +9,14 @@ Prereqs (once): [Docker Desktop](https://www.docker.com/products/docker-desktop/
 ```bash
 bun install
 bun run setup        # starts Postgres/MinIO/Mailpit in Docker, migrates, seeds, writes .env.local
-bun run dev          # http://localhost:3000 — web app + background worker together
+bun run dev          # http://localhost:__PORT_WEB__ — web app + background worker together
 ```
 
 | Thing | Where |
 |---|---|
-| App | http://localhost:3000 |
-| Every email the app sends | http://localhost:8025 (Mailpit) |
-| Uploaded files | http://localhost:9001 (MinIO console, `minio` / `minio-secret`) |
+| App | http://localhost:__PORT_WEB__ |
+| Every email the app sends | http://localhost:__PORT_MAIL__ (Mailpit) |
+| Uploaded files | http://localhost:__PORT_MINIO_CONSOLE__ (MinIO console, `minio` / `minio-secret`) |
 | Database browser | `bun run db:studio` |
 
 ## Everyday commands
@@ -28,6 +28,7 @@ bun run db:generate --name <change>   # after editing src/lib/db/schema/*
 bun run db:migrate
 bun run db:reset     # LOCAL ONLY: wipe data + start again
 bun run infra:down   # stop the Docker services
+stack ls             # all your apps, their URLs, which are running
 ```
 
 ## How the app is organised

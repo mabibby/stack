@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
  * Mailpit's API), and the example feature. Requires `bun run setup` + infra up.
  * Every new feature gets a spec here that walks the happy path in the browser.
  */
-const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:8025";
+const MAILPIT = process.env.MAILPIT_URL ?? "http://localhost:__PORT_MAIL__";
 
 const latestOtpFor = async (email: string): Promise<string> => {
   for (let i = 0; i < 20; i++) {

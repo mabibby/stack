@@ -20,7 +20,7 @@ echo "unsent=$(git rev-list --count origin/$branch..HEAD 2>/dev/null || echo '?'
 echo "matt_merged=$(git rev-list --count $branch..origin/main 2>/dev/null || echo '?')"   # commits on main we don't have
 git log --oneline -8
 ls docs/features 2>/dev/null
-curl -s -m 5 http://localhost:3000/api/health >/dev/null && echo app-running || echo app-not-running
+app=$(grep -E "^APP_URL=" .env.local | cut -d= -f2); curl -s -m 5 "$app/api/health" >/dev/null && echo "app-running $app" || echo app-not-running
 railway status 2>/dev/null | head -5 || echo not-linked-to-railway
 ```
 

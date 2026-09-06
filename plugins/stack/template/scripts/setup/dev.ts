@@ -126,9 +126,9 @@ if (existsSync(".git")) {
 console.log(`
 ✅ Ready.
 
-  bun run dev          → app on http://localhost:3000 (web + background worker together)
+  bun run dev          → app on http://localhost:__PORT_WEB__ (web + background worker together)
 
-  Mailpit (all email lands here):  http://localhost:8025
-  MinIO console:                    http://localhost:9001  (minio / minio-secret)
+  Mailpit (all email lands here):  http://localhost:__PORT_MAIL__
+  MinIO console:                    http://localhost:__PORT_MINIO_CONSOLE__  (minio / minio-secret)
   Drizzle Studio (browse the DB):   bun run db:studio
 `);

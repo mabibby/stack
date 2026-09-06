@@ -2,9 +2,9 @@
 # `bun run dev:worker`) for fast reloads; these containers provide the stateful
 # bits. Production equivalents: Railway Postgres, a Railway bucket, Resend.
 #
-# Ports (change here AND in .env.local if they clash with another project):
-#   5432  Postgres            9000/9001  MinIO API / console
-#   1025  Mailpit SMTP        8025       Mailpit web UI
+# Ports are assigned per app by `stack new` (see AGENTS.md → Local URLs). Container-side ports stay standard.
+#   __PORT_PG__  Postgres            __PORT_MINIO__/__PORT_MINIO_CONSOLE__  MinIO API / console
+#   __PORT_SMTP__  Mailpit SMTP        __PORT_MAIL__       Mailpit web UI
 
 name: __APP_NAME__
 
@@ -18,7 +18,7 @@ services:
       POSTGRES_PASSWORD: __DB_NAME__
       POSTGRES_DB: __DB_NAME__
     ports:
-      - "5432:5432"
+      - "__PORT_PG__:5432"
     volumes:
       # Postgres 18 reshuffled the data layout — mount the parent dir so the
       # image manages subdirectories itself.
@@ -38,8 +38,8 @@ services:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio-secret
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "__PORT_MINIO__:9000"
+      - "__PORT_MINIO_CONSOLE__:9001"
     volumes:
       - minio-data:/data
     healthcheck:
@@ -67,8 +67,8 @@ services:
     container_name: __APP_NAME__-mailpit
     restart: unless-stopped
     ports:
-      - "1025:1025"
-      - "8025:8025"
+      - "__PORT_SMTP__:1025"
+      - "__PORT_MAIL__:8025"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8025/livez"]
       interval: 5s

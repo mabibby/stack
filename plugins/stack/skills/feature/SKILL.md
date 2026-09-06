@@ -20,8 +20,8 @@ Read first, every time (they're short): the repo's `AGENTS.md`, then
 `${CLAUDE_PLUGIN_ROOT}/references/next16-cheatsheet.md` when touching pages/actions/caching.
 For library specifics (better-auth, drizzle, pg-boss, shadcn, playwright) prefer Context7 docs over memory.
 
-Make sure the app is running first (`curl -s http://localhost:3000/api/health`); if not, do the
-`/stack:start` steps quietly.
+The app's URLs (it has its own port slot) are in `AGENTS.md` → "Local URLs"; read them once — never assume
+3000. Make sure the app is running (`curl -s <app-url>/api/health`); if not, do the `/stack:start` steps quietly.
 
 ## 1. Understand (≤ 3 questions, only if needed)
 
@@ -80,7 +80,7 @@ check its `worker │` log lines, Mailpit, or the DB).
 ## 5. Demo + ship
 
 ```bash
-open "http://localhost:3000/<the feature's page>"
+open "<app-url>/<the feature's page>"
 ```
 Tell the user in plain words: what they can now do, where to click (you just opened it), what's out
 of scope. The screenshots are already in the conversation. Then offer `/stack:ship` (or just run it

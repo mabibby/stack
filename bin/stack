@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# `stack` — the Terminal side of the stack plugin. Installed by install.sh (symlink in ~/.local/bin).
+#   stack new <name> ["App Title"]   create an app in ~/projects, its own ports, Docker, git + GitHub
+#   stack ls                         your apps, their ports, and whether they're running
+#   stack update                     get Matt's latest version of the plugin
+#   stack doctor                     check this Mac has everything
+set -euo pipefail
+
+STACK_HOME="${STACK_HOME:-$HOME/.stack}"
+REPO="$STACK_HOME/repo"
+PROJECTS="${STACK_PROJECTS:-$HOME/projects}"
+REGISTRY="${STACK_REGISTRY:-$STACK_HOME/apps.tsv}"
+PLUGIN="$REPO/plugins/stack"
+MATT_GH="mabibby"
+
+say()  { printf '\n\033[1m▸ %s\033[0m\n' "$*"; }
+ok()   { printf '  \033[32m✔\033[0m %s\n' "$*"; }
+warn() { printf '  \033[33m!\033[0m %s\n' "$*"; }
+die()  { printf '\n\033[31m✘ %s\033[0m\n\n' "$*" >&2; exit 1; }
+
+title_from_name() { echo "$1" | tr '-' ' ' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)}1'; }
+
+cmd_new() {
+  local name="${1:-}"; local title="${2:-}"
+  [[ -z "$name" ]] && die "usage: stack new <app-name> [\"App Title\"]   e.g.  stack new fitness-tracker"
+  [[ "$name" =~ ^[a-z][a-z0-9-]{1,38}$ ]] || die "the name must be lowercase letters, digits and hyphens, e.g. fitness-tracker"
+  [[ -z "$title" ]] && title="$(title_from_name "$name")"
+  local dest="$PROJECTS/$name"
+  [[ -e "$dest" ]] && die "$dest already exists. Pick another name, or:  cd $dest && claude"
+
+  cmd_doctor quiet || die "Something is missing on this Mac — run:  bash $REPO/install.sh"
+  docker info >/dev/null 2>&1 || { say "Starting Docker Desktop…"; open -a Docker; for _ in $(seq 1 60); do docker info >/dev/null 2>&1 && break; sleep 3; done; docker info >/dev/null 2>&1 || die "Docker didn't start. Open Docker Desktop from Applications, wait for it, then try again."; }
+
+  say "Creating $title in $dest"
+  mkdir -p "$PROJECTS"
+  bash "$PLUGIN/scripts/new-app.sh" "$name" "$title" "$dest"
+  cd "$dest"
+
+  say "Installing packages"
+  bun install
+  say "Starting the local database, file store and mailbox (Docker)"
+  bun run setup
+  say "Installing the test browser"
+  bunx playwright install chromium >/dev/null 2>&1 || warn "Playwright browser install failed — Claude will retry later"
+
+  say "Saving to git"
+  git init -q -b main
+  git config core.hooksPath .githooks
+  git add -A && git commit -qm "chore: bootstrap $name from stack template"
+  local owner; owner="$(gh api user --jq .login 2>/dev/null || true)"
+  [[ -z "$owner" ]] && die "GitHub isn't signed in. Run:  gh auth login   then try again."
+  say "Creating a private GitHub repo $owner/$name"
+  if gh repo view "$owner/$name" >/dev/null 2>&1; then
+    warn "$owner/$name already exists on GitHub — using it"
+    git remote add origin "https://github.com/$owner/$name.git"
+  else
+    gh repo create "$name" --private --source=. --remote=origin >/dev/null
+  fi
+  if [[ "$owner" != "$MATT_GH" ]]; then
+    gh api -X PUT "repos/$owner/$name/collaborators/$MATT_GH" -f permission=admin >/dev/null 2>&1 && ok "Matt ($MATT_GH) invited as admin" || warn "couldn't invite $MATT_GH — ask Matt to check"
+  fi
+  STACK_ALLOW_MAIN=1 git push -q -u origin main
+  git switch -qc dev
+  printf '%s\n' '- **Working branch:** `dev` — all commits go here; Matt merges to `main`.' >> AGENTS.md
+  git add AGENTS.md && git commit -qm "docs: record working branch" && git push -q -u origin dev
+  ok "on branch dev, pushed to GitHub"
+
+  local web; web="$(grep -E '^APP_URL=' .env.local | cut -d= -f2)"
+  local mail; mail="$(grep -oE 'Mailpit \(every email\) http://[^ ]+' AGENTS.md | awk '{print $NF}')"
+  printf '\n\033[1m✅ %s is ready.\033[0m\n\n' "$title"
+  printf '  Next, copy-paste these two lines into Terminal:\n\n'
+  printf '      cd %s\n      claude\n\n' "$dest"
+  printf '  Then tell Claude:  start my app\n'
+  printf '  App: %s · Emails the app sends: %s · Code: https://github.com/%s/%s\n\n' "$web" "$mail" "$owner" "$name"
+}
+
+cmd_ls() {
+  [[ -f "$REGISTRY" ]] || { echo "No apps yet. Create one with:  stack new <name>"; return; }
+  printf '%-4s %-24s %-28s %-8s %s\n' SLOT APP URL RUNNING FOLDER
+  while IFS=$'\t' read -r slot name path; do
+    [[ -z "$slot" ]] && continue
+    local web=$((3000+slot)); local running=no
+    curl -s -m 2 "http://localhost:$web/api/health" 2>/dev/null | grep -q '"ok":true' && running=yes
+    [[ -d "$path" ]] || running="(missing)"
+    printf '%-4s %-24s %-28s %-8s %s\n' "$slot" "$name" "http://localhost:$web" "$running" "$path"
+  done < "$REGISTRY"
+  printf '\nEmails: http://localhost:<8025+slot> · Files: http://localhost:<9001+2*slot>\nOpen one:  cd <folder> && claude\n'
+}
+
+cmd_update() {
+  say "Updating the stack plugin"
+  if [[ -L "$REPO" ]]; then ok "using Matt's working copy ($(readlink "$REPO")) — nothing to pull"; else git -C "$REPO" pull -q --ff-only || die "couldn't update $REPO — tell Matt"; fi
+  claude plugin update stack@mabibby-stack >/dev/null 2>&1 || claude plugin install stack@mabibby-stack >/dev/null 2>&1 || warn "plugin update failed — tell Matt"
+  ok "now on version $(grep -o '"version": *"[^"]*"' "$PLUGIN/.claude-plugin/plugin.json" | cut -d'"' -f4). Quit and reopen Claude Code."
+}
+
+cmd_doctor() {
+  local quiet="${1:-}"; local bad=0
+  check() { if command -v "$1" >/dev/null 2>&1; then [[ -z "$quiet" ]] && ok "$1 $($1 --version 2>/dev/null | head -1)"; else [[ -z "$quiet" ]] && warn "$1 missing"; bad=1; fi; }
+  [[ -z "$quiet" ]] && say "Checking this Mac"
+  for c in git node bun docker gh claude; do check "$c"; done
+  if gh auth status >/dev/null 2>&1; then [[ -z "$quiet" ]] && ok "GitHub signed in as $(gh api user --jq .login 2>/dev/null)"; else [[ -z "$quiet" ]] && warn "GitHub not signed in (gh auth login)"; bad=1; fi
+  if claude plugin list 2>/dev/null | grep -q 'stack@mabibby-stack'; then [[ -z "$quiet" ]] && ok "stack plugin installed"; else [[ -z "$quiet" ]] && warn "stack plugin not installed"; bad=1; fi
+  [[ -z "$quiet" ]] && { docker info >/dev/null 2>&1 && ok "Docker running" || warn "Docker not running (open Docker Desktop)"; }
+  [[ -z "$quiet" && $bad -eq 1 ]] && printf '\nFix everything with:  bash %s/install.sh\n' "$REPO"
+  return $bad
+}
+
+case "${1:-}" in
+  new) shift; cmd_new "$@";;
+  ls|list) cmd_ls;;
+  update) cmd_update;;
+  doctor) cmd_doctor;;
+  *) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//';;
+esac
