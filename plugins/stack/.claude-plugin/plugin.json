@@ -1,7 +1,7 @@
 {
   "name": "stack",
-  "version": "0.1.0",
-  "description": "Bootstrap and build web apps the Matt way: Bun + Next.js + Postgres/Drizzle + better-auth + pg-boss + shadcn, Docker for local infra, Railway for prod. Skills: new-app, feature, ship, db-change, deploy, doctor.",
+  "version": "0.2.0",
+  "description": "Bootstrap and build web apps the Matt way: Bun + Next.js + Postgres/Drizzle + better-auth + pg-boss + shadcn, Docker for local infra, Railway for prod. Skills: setup, new-app, start, feature, ship, status, undo, db-change, deploy, doctor. Guard-rail hooks inside stack projects.",
   "author": { "name": "Matt Bibby" },
   "license": "MIT",
   "keywords": ["nextjs", "drizzle", "better-auth", "pg-boss", "shadcn", "railway", "bun", "template", "bootstrap"]

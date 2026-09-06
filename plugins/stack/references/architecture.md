@@ -41,7 +41,7 @@ product thinking is where the effort goes. Companion doc: `next16-cheatsheet.md`
 | Logging | **pino** | `logger.info({ ctx }, "dotted.event")`. Pretty in dev, JSON in prod. |
 | Lint/format | **Biome** | Replaces ESLint + Prettier. `bun run lint:fix`. |
 | Tests | **`bun test`** (unit) + **Playwright** (e2e) | Unit = domain logic with fake db. E2E = real stack, Mailpit API for OTPs. |
-| Local infra | **Docker Compose** | Postgres, MinIO (+bucket), Mailpit. App runs natively for fast reload. |
+| Local infra | **Docker Compose** | Postgres, MinIO (+bucket), Mailpit. App runs natively for fast reload: `bun run dev` = web + worker in one terminal (`scripts/dev.ts`). |
 | Hosting | **Railway** | `web` + `worker` services from one Dockerfile, Postgres, bucket. Health `/api/health`. |
 
 ## 3. How a request flows
@@ -85,13 +85,15 @@ src/
   lib/
     env.ts             zod-validated env — the ONLY place process.env is read
     db/client.ts       db + pgClient                db/schema/   shared.ts, auth.ts, <feature>.ts, index.ts
-    auth/              auth.ts (server), client.ts (browser), session.ts (getSession/requireSession)
+    auth/              auth.ts (server), client.ts (browser), session.ts (getSession/requireSession),
+                       signup-policy.ts (SIGNUP_ALLOWLIST: who may create an account)
     server/            action.ts (defineAction), errors.ts (AppError family)
     domain/<feature>/  queries.ts, mutations.ts     jobs/        queues.ts, queue.ts, handlers/
     email/             send.ts, templates.ts        storage/     s3.ts (presign helpers)
     observability/     logger.ts                    utils.ts     cn()
 worker/index.ts        the background process
-scripts/               setup/dev.ts, seed.ts, db-reset.ts (bun scripts, not app code)
+scripts/               dev.ts (web+worker), setup/dev.ts, seed.ts, db-reset.ts (bun scripts, not app code)
+.githooks/             pre-push guard (no pushes to main, no force) — installed by setup
 tests/unit/ tests/e2e/ tests/setup.ts
 drizzle/               generated SQL migrations + meta (commit them, never edit applied ones)
 ```
@@ -213,6 +215,8 @@ Public (browser) vars must be prefixed `NEXT_PUBLIC_`.
 - **Client**: `useSession()` for display only, never for authorization.
 - **Authorization = the query.** Filter by `userId` (or membership) in the domain function itself.
   A missing row for another user's id is a `NotFoundError`, not a `ForbiddenError` (don't leak existence).
+- **Who can sign up** = `SIGNUP_ALLOWLIST` (env; empty = anyone; emails and/or `@domains`), enforced in
+  better-auth's `user.create.before` hook so every method obeys it. Invite-only apps just set it in prod.
 - Roles/orgs when needed: better-auth `admin` / `organization` plugins, or a `role` column via
   `user.additionalFields`. Not before.
 - SMS OTP when needed: better-auth `phoneNumber` plugin with a `sendOTP` callback (Twilio); stub to
@@ -242,9 +246,11 @@ Don't unit-test React components or Drizzle queries; the e2e spec covers them. S
 ## 9. Git workflow (solo builder, reviewer merges)
 
 - Work on the **working branch** named in the repo's `AGENTS.md` (default `dev`). Never commit to `main`.
-- `/stack:ship` = `bun run check` → conventional commit → `git push`. Never `--force`, never
-  `reset --hard`, never rewrite pushed history. Conflicts on push → `git pull --rebase`, resolve, push;
-  if unsure, stop and ask.
+- `/stack:ship` = merge `origin/main` into the working branch (so Matt's fixes flow back) → `bun run check`
+  → conventional commit → `git push`. Never `--force`, never `reset --hard`, never rewrite pushed history.
+  Conflicts → resolve if trivial, else stop and ask. Guard-rails enforce this twice: the plugin's
+  PreToolUse hook (`scripts/guard.sh`, only inside stack projects) and `.githooks/pre-push`.
+  Override for a deliberate push to main (Matt only): `STACK_ALLOW_MAIN=1 git push`.
 - Commit per feature or coherent slice: `feat(scope): …`, `fix(scope): …`, `chore: …`, `test(e2e): …`,
   `refactor(scope): …`, `docs: …`. Subject ≤ 72 chars, imperative.
 - Secrets never enter git: `.env.local` is ignored; keys go in Railway variables.
@@ -255,8 +261,9 @@ One Railway project per app: **`web`** (Dockerfile → `railway.toml`; start = m
 health `/api/health`), **`worker`** (same Dockerfile; config path `railway.worker.toml`; start
 `bun run worker`), **Postgres**, and a **bucket** (S3-compatible). Env vars on both app services:
 `APP_URL`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `BETTER_AUTH_SECRET`, `EMAIL_FROM`,
-`RESEND_API_KEY`, `S3_*` (from the bucket), `LOG_LEVEL=info`, `NODE_ENV=production`. Deploy branch is
-`dev` while one person is building, `main` once releases are reviewed. `/stack:deploy` does this.
+`RESEND_API_KEY`, `SIGNUP_ALLOWLIST`, `S3_*` (from the bucket), `LOG_LEVEL=info`, `NODE_ENV=production`.
+Deploy branch is `dev` (the builder sees their work live; `main` is the reviewed copy). Postgres backups on.
+`/stack:deploy` does this.
 
 ## 11. Explicitly not in v1 (and how to add later)
 

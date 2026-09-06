@@ -20,7 +20,7 @@ const schema = z.object({
 });
 type Values = z.infer<typeof schema>;
 
-export function SignUpForm() {
+export function SignUpForm({ inviteOnly = false }: { inviteOnly?: boolean }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const form = useForm<Values>({
@@ -44,7 +44,11 @@ export function SignUpForm() {
     <Card>
       <CardHeader>
         <CardTitle>Create your account</CardTitle>
-        <CardDescription>It takes ten seconds.</CardDescription>
+        <CardDescription>
+          {inviteOnly
+            ? "This app is invitation only — use the email address you were invited with."
+            : "It takes ten seconds."}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} noValidate>

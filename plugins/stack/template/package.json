@@ -5,7 +5,8 @@
   "packageManager": "bun@1.3.14",
   "scripts": {
     "setup": "bun run scripts/setup/dev.ts",
-    "dev": "next dev",
+    "dev": "bun run scripts/dev.ts",
+    "dev:web": "next dev",
     "dev:worker": "bun --watch worker/index.ts",
     "build": "next build",
     "start": "next start",

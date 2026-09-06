@@ -46,15 +46,38 @@ if (existsSync(".env.local")) {
   log("created .env.local from .env.example (fresh BETTER_AUTH_SECRET)");
 }
 
-// 3. infra
+// 3. infra — first, politely stop another compose project (usually another stack app) that
+// already holds one of the host ports this project publishes.
+const composeConfig = quiet("docker", ["compose", "config", "--format", "json"]).out;
+const thisProject = composeConfig.match(/"name":\s*"([^"]+)"/)?.[1] ?? "";
+const publishedPorts = [...composeConfig.matchAll(/"published":\s*"?(\d+)"?/g)].map((m) => m[1]);
+const holders = new Set<string>();
+for (const port of publishedPorts) {
+  const projects = quiet("docker", [
+    "ps",
+    "--filter",
+    `publish=${port}`,
+    "--format",
+    '{{.Label "com.docker.compose.project"}}',
+  ]).out.split("\n");
+  for (const p of projects.map((s) => s.trim())) if (p && p !== thisProject) holders.add(p);
+}
+for (const other of holders) {
+  log(`stopping containers of another project ("${other}") that hold the local ports`);
+  const ids = quiet("docker", [
+    "ps",
+    "-q",
+    "--filter",
+    `label=com.docker.compose.project=${other}`,
+  ]).out;
+  if (ids) run("docker", ["stop", ...ids.split("\n").filter(Boolean)]);
+}
+
 log("docker compose up -d");
 run("docker", ["compose", "up", "-d", "--remove-orphans"]);
 
 // 4. health
-const projectName =
-  quiet("docker", ["compose", "config", "--format", "json"]).out.match(
-    /"name":\s*"([^"]+)"/,
-  )?.[1] ?? "";
+const projectName = thisProject;
 const waitHealthy = async (service: string, timeoutMs = 90_000) => {
   const container = `${projectName}-${service}`;
   const deadline = Date.now() + timeoutMs;
@@ -94,11 +117,16 @@ run("bun", ["run", "db:migrate"], envLocal);
 log("seeding");
 run("bun", ["run", "db:seed"], envLocal);
 
+// 6. git guard-rails (no pushes to main, no force pushes) — only once this is a git repo.
+if (existsSync(".git")) {
+  run("git", ["config", "core.hooksPath", ".githooks"]);
+  log("git hooks installed (.githooks)");
+}
+
 console.log(`
 ✅ Ready.
 
-  bun run dev          → app on http://localhost:3000
-  bun run dev:worker   → background jobs (2nd terminal)
+  bun run dev          → app on http://localhost:3000 (web + background worker together)
 
   Mailpit (all email lands here):  http://localhost:8025
   MinIO console:                    http://localhost:9001  (minio / minio-secret)

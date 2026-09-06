@@ -34,6 +34,18 @@ const envSchema = z.object({
     .transform((v) => v === "true"),
 
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
+
+  // Who may create an account. Empty = anyone. Otherwise comma-separated emails and/or
+  // @domains, e.g. "matt@example.com,@semanti.com". Checked for every sign-up method.
+  SIGNUP_ALLOWLIST: z
+    .string()
+    .default("")
+    .transform((v) =>
+      v
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    ),
 });
 
 export type Env = z.infer<typeof envSchema>;

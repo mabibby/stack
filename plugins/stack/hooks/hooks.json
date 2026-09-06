@@ -1,0 +1,17 @@
+{
+  "description": "stack guard-rails inside stack projects: no pushes to main, no force pushes, no history rewriting, no drizzle push, no rm -rf of the repo. Other repos are untouched.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/guard.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

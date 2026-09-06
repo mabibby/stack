@@ -9,8 +9,7 @@ Prereqs (once): [Docker Desktop](https://www.docker.com/products/docker-desktop/
 ```bash
 bun install
 bun run setup        # starts Postgres/MinIO/Mailpit in Docker, migrates, seeds, writes .env.local
-bun run dev          # http://localhost:3000
-bun run dev:worker   # background jobs — second terminal
+bun run dev          # http://localhost:3000 — web app + background worker together
 ```
 
 | Thing | Where |
@@ -35,6 +34,11 @@ bun run infra:down   # stop the Docker services
 
 Read [`AGENTS.md`](./AGENTS.md) — the rules and layout in one page. The `notes` feature is a complete
 worked example of the pattern (schema → domain → server action → form → e2e test); copy it, then delete it.
+
+## Who can sign up?
+
+Locally anyone can (tests rely on it). In production set `SIGNUP_ALLOWLIST` on Railway to a comma-separated
+list of emails and/or `@domains` to make the app invitation-only. Leave it empty for public sign-up.
 
 ## Deploying
 

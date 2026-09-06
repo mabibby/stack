@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "stack",
-      "description": "Bootstrap and build web apps the Matt way: /stack:new-app, /stack:feature, /stack:ship, /stack:db-change, /stack:deploy, /stack:doctor. Encodes the architecture so you can focus on product.",
+      "description": "Bootstrap and build web apps the Matt way: /stack:setup, /stack:new-app, /stack:start, /stack:feature, /stack:ship, /stack:status, /stack:undo, /stack:db-change, /stack:deploy, /stack:doctor. Encodes the architecture so you can focus on product.",
       "author": { "name": "Matt Bibby" },
       "source": "./plugins/stack",
       "category": "development"

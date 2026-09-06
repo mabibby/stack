@@ -1,7 +1,9 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { emailOTP, magicLink } from "better-auth/plugins";
+import { isSignupAllowed, SIGNUP_CLOSED_MESSAGE } from "@/lib/auth/signup-policy";
 import { db } from "@/lib/db/client";
 import * as schema from "@/lib/db/schema/auth";
 import { sendEmail } from "@/lib/email/send";
@@ -48,6 +50,14 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Sign-up policy (SIGNUP_ALLOWLIST) — one check covers password, code and magic link.
+        before: (newUser) => {
+          if (!isSignupAllowed(newUser.email, env.SIGNUP_ALLOWLIST)) {
+            logger.warn({ email: newUser.email }, "auth.signup.rejected");
+            return Promise.reject(new APIError("FORBIDDEN", { message: SIGNUP_CLOSED_MESSAGE }));
+          }
+          return Promise.resolve({ data: newUser });
+        },
         after: async (createdUser) => {
           // Non-blocking: welcome email through the worker.
           try {

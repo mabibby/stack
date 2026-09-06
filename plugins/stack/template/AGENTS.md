@@ -30,6 +30,8 @@ Tailwind v4 + shadcn/ui · react-hook-form + zod · Biome · Playwright + `bun t
 | `worker/index.ts` | The background worker process. |
 | `src/components/ui` | shadcn — generated, don't hand-edit; add more with `bunx shadcn add <name>`. |
 | `src/lib/env.ts` | Every env var, zod-validated. Add here FIRST, then `.env.example`. |
+| `src/lib/auth/signup-policy.ts` | Who may create an account (`SIGNUP_ALLOWLIST`). Empty locally; set in prod for invite-only apps. |
+| `scripts/dev.ts`, `.githooks/` | `bun run dev` runs web + worker together. Git hooks refuse pushes to main and force pushes. |
 | `tests/unit`, `tests/e2e` | `bun test` (domain logic, fake db) and Playwright (real browser, real stack). |
 
 ## Rules
@@ -44,15 +46,19 @@ Tailwind v4 + shadcn/ui · react-hook-form + zod · Biome · Playwright + `bun t
 8. **Logging**: `logger.info({ ctx }, "dotted.event.name")` — never `console.log` in app code.
 9. **YAGNI**: no monorepo, no tRPC/GraphQL, no react-query, no global state library, no Redis, no feature flags, no i18n, no extra services — until a real, present need. Ask before adding a dependency.
 10. **Formatting**: Biome owns it. `bun run lint:fix` before every commit; `bun run check` must pass.
+11. **Guard-rails are real**: pushes to `main`, force pushes, `git reset --hard` and `db:push` are blocked by the stack plugin hook and by `.githooks/pre-push`. Don't work around them; if one fires, the user needs Matt.
+12. **Talk product, not tech.** The person you work with is not a developer. Say "saved and sent to Matt", not "committed and pushed to dev"; open the page in their browser (`open http://localhost:3000/…`) and show screenshots instead of describing code. Technical detail on request only.
 
 ## Definition of done (for every feature)
 
 - [ ] `bun run check` passes (lint + types + unit tests)
 - [ ] Playwright spec in `tests/e2e/` for the happy path — and it passes (`bun run test:e2e`)
-- [ ] Verified in a real browser (Playwright MCP): screens look right, errors are friendly
+- [ ] Verified in a real browser (Playwright MCP): screens look right at desktop AND phone width (390px), errors are friendly
 - [ ] `.env.example` + `src/lib/env.ts` updated if config changed; migration generated if schema changed
 - [ ] Committed with a conventional message (`feat(notes): add archive action`) and pushed to the working branch
 
 ## Local URLs
 
 App http://localhost:3000 · Mailpit http://localhost:8025 · MinIO console http://localhost:9001 · `bun run db:studio`
+
+Start everything with ONE command: `bun run dev` (web + worker). Infra: `bun run setup` (idempotent).

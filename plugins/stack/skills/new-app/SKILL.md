@@ -12,36 +12,29 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, mcp__plugin
 # /stack:new-app — start a new app
 
 You are setting up a project for someone who is a product person, not a developer. Do the technical
-work; explain outcomes in plain words; never dump raw logs on them unless something failed.
-
-Architecture reference (read now, briefly): `${CLAUDE_PLUGIN_ROOT}/references/architecture.md`.
+work; explain outcomes in plain words (`${CLAUDE_PLUGIN_ROOT}/references/voice.md`); never dump raw
+logs on them unless something failed. Architecture reference (skim now):
+`${CLAUDE_PLUGIN_ROOT}/references/architecture.md`.
 
 ## 1. Gather inputs (ask only for what's missing)
 
 - **App name** — kebab-case (`fitness-tracker`). Derive from what they said; confirm if you invented it.
 - **App title** — human name shown in the UI/emails (`Fitness Tracker`).
-- **Where** — default: a new folder with the app name inside the current directory. If the current
-  directory already contains a project (package.json / .git), ask before nesting.
-- **GitHub repo** — ask: "Did Matt give you a GitHub repo URL for this? If not I'll create a private
-  one under your account." Accept `https://github.com/owner/name` or `owner/name`.
-- **Working branch** — default `dev`. (Matt reviews and merges to `main`; the builder never pushes to `main`.)
+- **Where** — `~/projects/<app-name>` unless they're clearly somewhere else on purpose. If the current
+  directory already contains a project (package.json / .git), don't nest — use `~/projects/<app-name>`.
+- **GitHub repo** — ask: "Did Matt give you a GitHub link for this app? If not I'll create a private
+  one under your GitHub account and invite him." Accept `https://github.com/owner/name` or `owner/name`.
+- **Working branch** — `dev`. Don't ask. (Matt reviews and merges to `main`; the builder never pushes to `main`.)
 
 ## 2. Prerequisite check (fix or explain, don't proceed broken)
 
-Run and interpret:
 ```bash
 docker info >/dev/null 2>&1 && echo docker-ok || echo docker-missing
-node --version; bun --version; git --version; gh --version; gh auth status
+node --version; bun --version; git --version; gh --version | head -1; gh auth status 2>&1 | head -1
 ```
-- Node missing or < 20.9 → install Node LTS from https://nodejs.org (or `brew install node`). Next.js runs on
-  Node; Bun is the package manager/script runner and runs the worker.
-- Docker missing/not running → "Open Docker Desktop and wait until it says Running, then tell me" (if not
-  installed: https://www.docker.com/products/docker-desktop/ — install, open once, then come back).
-- bun missing → `curl -fsSL https://bun.sh/install | bash` then reopen the terminal.
-- gh missing/unauthenticated → `brew install gh` (mac) and `gh auth login` (they must do the browser step).
-- Ports 3000/5432/9000/9001/1025/8025 in use? `lsof -nP -iTCP:5432 -sTCP:LISTEN` etc. If another stack
-  app's containers hold them, `docker compose down` in that project or edit this project's
-  `docker-compose.yml` + `.env.local` ports after scaffolding — explain what you did.
+Anything missing → run the `/stack:setup` steps for that item (Docker not running: `open -a Docker`,
+wait for `docker info`). Ports 3000/5432/9000/9001/1025/8025 held by another stack app are handled by
+`bun run setup` (it stops that app's containers and says so).
 
 ## 3. Scaffold
 
@@ -58,39 +51,44 @@ bunx playwright install chromium
 
 ```bash
 git init -b main
+git config core.hooksPath .githooks          # guard-rails: no pushes to main, no force pushes
 git add -A && git commit -m "chore: bootstrap <app-name> from stack template"
 # existing repo URL:  git remote add origin <url>
 # else:               gh repo create <app-name> --private --source=. --remote=origin
 #                     gh api -X PUT repos/<owner>/<app-name>/collaborators/mabibby -f permission=admin   # invite Matt
-git push -u origin main
-git switch -c <working-branch> && git push -u origin <working-branch>
+STACK_ALLOW_MAIN=1 git push -u origin main   # the ONE allowed push to main: the empty bootstrap
+git switch -c dev && git push -u origin dev
 ```
 Then record the working branch in `AGENTS.md`: append a line under "## Rules":
-`- **Working branch:** \`<working-branch>\` — all commits go here; Matt merges to \`main\`.`
-Commit that on the working branch and push.
+`- **Working branch:** \`dev\` — all commits go here; Matt merges to \`main\`.`
+Commit that on `dev` and push.
 
 If a repo URL was provided and the push is rejected (no access), stop and tell them to ask Matt for
 write access — do not try to create a different repo.
 
 ## 5. Prove it works
 
-1. Start `bun run dev` (background) and `bun run dev:worker` (background).
+1. Start `bun run dev` (background — runs web + worker together).
 2. `curl -s http://localhost:3000/api/health` → expect `{"ok":true,"db":"up"}`.
 3. Playwright MCP: open http://localhost:3000, click **Create account**, sign up with a made-up
-   email, land on the dashboard, take a screenshot. Open http://localhost:8025 and confirm the welcome
-   email arrived (proves the worker + mail path).
+   email, land on the dashboard, screenshot it and `Read` the screenshot. Open http://localhost:8025
+   and confirm the welcome email arrived (proves the worker + mail path).
 4. Run `bun run test:e2e` — must pass.
 If anything fails, fix it (this is a known-good template; failures are almost always environment:
 Docker not ready, a port clash, or a stale `.env.local`). Use `/stack:doctor` logic.
 
-## 6. Hand over (say this in plain words)
+## 6. Hand over (say this in plain words, and do the `open`)
 
-- Where the project lives; that it's pushed to GitHub on branch `<working-branch>`.
-- The URLs: app http://localhost:3000, emails http://localhost:8025, files http://localhost:9001,
-  database `bun run db:studio`.
-- Day-to-day: "run `bun run dev` and `bun run dev:worker` in two terminals (or ask me to)". To build
-  something: `/stack:feature <what you want>`. To save & push: `/stack:ship`. Something off:
-  `/stack:doctor`. To put it on the internet: `/stack:deploy`.
-- The example **Notes** feature exists to be copied and then deleted.
-
-Leave the dev servers running.
+```bash
+open http://localhost:3000
+```
+- "Your app **<App Title>** lives in the folder `~/projects/<app-name>` and is saved on GitHub
+  (private, Matt invited). It's open in your browser at http://localhost:3000."
+- **The one thing they must do now:** "Quit Claude Code and open it again **inside that folder**
+  (File → Open Folder → projects → <app-name>). That's how I know which app we're working on."
+  This is not optional: the app's rules and permissions only load from inside its folder.
+- Then: `/stack:feature <what you want>` to build · `/stack:ship` to save & send to Matt ·
+  `/stack:start` to get it running again · `/stack:status` to see where things stand ·
+  `/stack:undo` to go back · `/stack:doctor` if something's off · `/stack:deploy` to put it online.
+- Emails the app sends land at http://localhost:8025. The example **Notes** screen exists to show the
+  pattern; it will be removed when the first real feature is built.

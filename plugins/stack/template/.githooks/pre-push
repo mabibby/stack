@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Git-level guard-rail, installed by `bun run setup` (git config core.hooksPath .githooks).
+# Works even outside Claude Code. Refuses:
+#   - any push to main            (Matt merges to main)
+#   - force pushes                 (would rewrite history on the server)
+#   - deleting remote branches
+# Override for a deliberate, bootstrap-style push:  STACK_ALLOW_MAIN=1 git push ...
+set -euo pipefail
+[[ "${STACK_ALLOW_MAIN:-}" == "1" ]] && exit 0
+
+zero=0000000000000000000000000000000000000000
+while read -r _local_ref local_sha remote_ref remote_sha; do
+  if [[ "$local_sha" == "$zero" ]]; then
+    echo "✘ Deleting the remote branch '${remote_ref#refs/heads/}' is not allowed from here." >&2
+    exit 1
+  fi
+  if [[ "$remote_ref" == "refs/heads/main" ]]; then
+    echo "✘ Pushing to main is not allowed from here — Matt merges to main." >&2
+    echo "  Push your working branch instead: /stack:ship" >&2
+    exit 1
+  fi
+  if [[ "$remote_sha" != "$zero" ]] && git cat-file -e "$remote_sha" 2>/dev/null; then
+    if ! git merge-base --is-ancestor "$remote_sha" "$local_sha"; then
+      echo "✘ This push would overwrite history on the server (force push)." >&2
+      echo "  Run /stack:ship — it pulls first, then pushes." >&2
+      exit 1
+    fi
+  fi
+done
+exit 0
