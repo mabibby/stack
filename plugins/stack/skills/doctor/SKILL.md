@@ -35,7 +35,8 @@ pgrep -fl "worker/index.ts" || echo WORKER_DOWN
 # 7. Mail + files
 mail=$(grep -oE "Mailpit \(every email\) http://[^ ]+" AGENTS.md | awk '{print $NF}'); s3=$(grep -E "^S3_ENDPOINT=" .env.local | cut -d= -f2)
 curl -s -m 5 "$mail/livez" >/dev/null && echo mailpit-ok || echo MAILPIT_DOWN
-curl -s -m 5 "$s3/minio/health/live" >/dev/null && echo minio-ok || echo MINIO_DOWN
+curl -s -m 5 "$s3/health" >/dev/null && echo storage-ok || echo STORAGE_DOWN
+grep -qE "image: *minio/" docker-compose.yml && echo USES_MINIO
 # 8. Quality gates
 bun run typecheck 2>&1 | tail -5; bun run lint 2>&1 | tail -3
 # 9. Guard-rails present?
@@ -55,6 +56,9 @@ Fixes:
 - **APP_DOWN / WORKER_DOWN** → start `bun run dev` (background; it runs both) and re-check; read its
   output for the real error ("Invalid environment variables" → fix `.env.local`; module not found →
   `bun install`; a compile error → fix the file it names).
+- **USES_MINIO** → this app predates the switch to RustFS; MinIO's images no longer exist, so setup
+  fails on a fresh Mac. Do the RustFS migration in `/stack:upgrade` §4.
+- **STORAGE_DOWN** → `bun run setup` (re-creates the container and the bucket).
 - **Email never arrives** → Mailpit up? `SMTP_URL=smtp://localhost:1025` in `.env.local`? For OTP/reset the
   app sends inline (dev server log shows `email.sent`); for welcome/other mail the worker must be running.
 - **Can't sign in / weird auth errors** → `BETTER_AUTH_SECRET` ≥ 32 chars and unchanged since sign-up

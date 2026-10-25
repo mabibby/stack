@@ -23,6 +23,10 @@ For library specifics (better-auth, drizzle, pg-boss, shadcn, playwright) prefer
 The app's URLs (it has its own port slot) are in `AGENTS.md` → "Local URLs"; read them once — never assume
 3000. Make sure the app is running (`curl -s <app-url>/api/health`); if not, do the `/stack:start` steps quietly.
 
+**Versions first, every time.** Before the spec, run `bun "${CLAUDE_PLUGIN_ROOT}/scripts/versions.ts"`.
+If it lists anything, do `/stack:upgrade` now (its own save), then come back to the feature. Don't skip
+this to save time and don't ask — it's how the app stays healthy.
+
 ## 1. Understand (≤ 3 questions, only if needed)
 
 Restate the request as: **who** does it, **what** they see/do, **what changes** as a result. Ask only
@@ -63,6 +67,9 @@ button, a colour, a column) don't need a spec — just say what you'll do and do
 
 Conventions to hold: no business logic in components/actions · every query scoped by user ·
 `publicId` in URLs · no new dependencies without saying why (and prefer none) · Biome-clean.
+New dependencies are always the newest stable release (`bun add <pkg>@latest`, `bunx shadcn@latest add
+<component>`), and you read the docs for the version actually installed (Context7, or
+`node_modules/<pkg>`) — APIs move fast and memory is often a major version behind.
 
 ## 4. Verify (non-negotiable)
 

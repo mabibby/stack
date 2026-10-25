@@ -2,7 +2,7 @@
 # Copies the template into a new directory, assigns a port slot, and stamps name/title/ports.
 # Usage: new-app.sh <app-name-kebab> "<App Title>" [destination-dir] [--slot N]
 #
-# Port slots: slot k → web 3000+k · postgres 5432+k · minio 9000+2k / console 9001+2k ·
+# Port slots: slot k → web 3000+k · postgres 5432+k · rustfs (S3) 9000+2k / console 9001+2k ·
 # mailpit smtp 1025+k / web 8025+k. Recorded in ~/.stack/apps.tsv (slot, name, path) so several
 # apps can run side by side. The first slot whose ports are all free (registry + this machine) wins.
 set -euo pipefail
@@ -28,7 +28,7 @@ if [[ -e "$DEST" && -n "$(ls -A "$DEST" 2>/dev/null)" ]]; then
 fi
 
 # ---- port slot -------------------------------------------------------------
-ports_for_slot() { # slot → "web pg minio console smtp mail"
+ports_for_slot() { # slot → "web pg s3 s3-console smtp mail"
   local k=$1; echo "$((3000+k)) $((5432+k)) $((9000+2*k)) $((9001+2*k)) $((1025+k)) $((8025+k))"
 }
 port_busy() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
@@ -41,7 +41,7 @@ if [[ -z "$SLOT" ]]; then
   done
   [[ -z "$SLOT" ]] && { echo "no free port slot found (0–99)" >&2; exit 1; }
 fi
-read -r P_WEB P_PG P_MINIO P_MINIO_CONSOLE P_SMTP P_MAIL <<<"$(ports_for_slot "$SLOT")"
+read -r P_WEB P_PG P_S3 P_S3_CONSOLE P_SMTP P_MAIL <<<"$(ports_for_slot "$SLOT")"
 
 # ---- copy + stamp -------------------------------------------------------------
 mkdir -p "$DEST"
@@ -53,14 +53,22 @@ rsync -a \
 
 DB_NAME="${NAME//-/_}"
 export STAMP_TITLE="$TITLE" STAMP_NAME="$NAME" STAMP_DB="$DB_NAME" STAMP_SLOT="$SLOT" \
-  P_WEB P_PG P_MINIO P_MINIO_CONSOLE P_SMTP P_MAIL
-grep -rIl --exclude-dir=node_modules -e "__APP_NAME__" -e "__APP_TITLE__" -e "__DB_NAME__" -e "__PORT_" "$DEST" | while read -r f; do
+  P_WEB P_PG P_S3 P_S3_CONSOLE P_SMTP P_MAIL
+# Placeholders are __NAME__. Markdown formatters (Biome) rewrite __X__ as **X** (bold), so accept both.
+PH='(__|\*\*)(APP_TITLE|APP_NAME|DB_NAME|PORT_SLOT|PORT_WEB|PORT_PG|PORT_S3_CONSOLE|PORT_S3|PORT_SMTP|PORT_MAIL)(__|\*\*)'
+export PH
+grep -rIlE --exclude-dir=node_modules "$PH" "$DEST" | while read -r f; do
   perl -pi -e '
-    s/__APP_TITLE__/$ENV{STAMP_TITLE}/g; s/__DB_NAME__/$ENV{STAMP_DB}/g; s/__APP_NAME__/$ENV{STAMP_NAME}/g;
-    s/__PORT_SLOT__/$ENV{STAMP_SLOT}/g; s/__PORT_WEB__/$ENV{P_WEB}/g; s/__PORT_PG__/$ENV{P_PG}/g;
-    s/__PORT_MINIO_CONSOLE__/$ENV{P_MINIO_CONSOLE}/g; s/__PORT_MINIO__/$ENV{P_MINIO}/g;
-    s/__PORT_SMTP__/$ENV{P_SMTP}/g; s/__PORT_MAIL__/$ENV{P_MAIL}/g' "$f"
+    my %v = (APP_TITLE => $ENV{STAMP_TITLE}, APP_NAME => $ENV{STAMP_NAME}, DB_NAME => $ENV{STAMP_DB},
+      PORT_SLOT => $ENV{STAMP_SLOT}, PORT_WEB => $ENV{P_WEB}, PORT_PG => $ENV{P_PG},
+      PORT_S3_CONSOLE => $ENV{P_S3_CONSOLE}, PORT_S3 => $ENV{P_S3}, PORT_SMTP => $ENV{P_SMTP},
+      PORT_MAIL => $ENV{P_MAIL});
+    s/$ENV{PH}/$v{$2}/g' "$f"
 done
+if left="$(grep -rIlE --exclude-dir=node_modules "$PH" "$DEST")"; then
+  echo "✘ unfilled placeholders left in: $left" >&2
+  exit 1
+fi
 
 # ---- registry -------------------------------------------------------------
 mkdir -p "$(dirname "$REGISTRY")"
@@ -68,4 +76,4 @@ ABS_DEST="$(cd "$DEST" && pwd)"
 if ! slot_taken "$SLOT"; then printf '%s\t%s\t%s\n' "$SLOT" "$NAME" "$ABS_DEST" >> "$REGISTRY"; fi
 
 echo "✔ created $ABS_DEST from template (name=$NAME, title=\"$TITLE\", port slot $SLOT)"
-echo "  app http://localhost:$P_WEB · emails http://localhost:$P_MAIL · files http://localhost:$P_MINIO_CONSOLE · postgres localhost:$P_PG"
+echo "  app http://localhost:$P_WEB · emails http://localhost:$P_MAIL · files http://localhost:$P_S3_CONSOLE/rustfs/console/ · postgres localhost:$P_PG"

@@ -9,8 +9,9 @@ product thinking is where the effort goes. Companion doc: `next16-cheatsheet.md`
 1. **YAGNI, aggressively.** Build what the current feature needs. No abstractions "for later", no
    extra services, no monorepo, no state libraries, no config flags for hypothetical futures. When
    a real need arrives, the layered design makes adding things cheap.
-2. **Boring, proven tech.** Everything below has been used across many production apps by Matt.
-   Don't swap a piece for something newer without discussing it.
+2. **Boring, proven tech — on its latest stable release.** Everything below has been used across many
+   production apps. Don't swap a piece for something else without discussing it; do keep every piece
+   on its newest stable version (§12).
 3. **Server-first.** Pages are React Server Components that call the domain layer directly. Client
    components are leaves (forms, menus, interactive widgets). Mutations are server actions.
 4. **Business rules live in one place** — `src/lib/domain/*` — never in components, actions,
@@ -37,11 +38,11 @@ product thinking is where the effort goes. Companion doc: `next16-cheatsheet.md`
 | UI | **Tailwind v4 + shadcn/ui** (radix-nova, neutral) | `lucide-react` icons, `sonner` toasts, `next-themes`. `cn()` from `@/lib/utils`. |
 | Forms | **react-hook-form + zod** | shadcn `Field*` components. Same zod shape client + server. |
 | Email | `sendEmail()` → **Mailpit** (dev) / **Resend** (prod) | Switched purely by env. Templates in `src/lib/email/templates.ts`. |
-| Files | **S3 API** → **MinIO** (dev) / Railway bucket, R2 or S3 (prod) | Presigned upload/download URLs; browser never sees credentials. |
+| Files | **S3 API** → **RustFS** (dev) / Railway bucket, R2 or S3 (prod) | Presigned upload/download URLs; browser never sees credentials. Bucket + CORS (APP_URL only) via `bun run storage:setup`. |
 | Logging | **pino** | `logger.info({ ctx }, "dotted.event")`. Pretty in dev, JSON in prod. |
 | Lint/format | **Biome** | Replaces ESLint + Prettier. `bun run lint:fix`. |
 | Tests | **`bun test`** (unit) + **Playwright** (e2e) | Unit = domain logic with fake db. E2E = real stack, Mailpit API for OTPs. |
-| Local infra | **Docker Compose** | Postgres, MinIO (+bucket), Mailpit. App runs natively for fast reload: `bun run dev` = web + worker in one terminal (`scripts/dev.ts`). |
+| Local infra | **Docker Compose** | Postgres, RustFS, Mailpit (image tags pinned). App runs natively for fast reload: `bun run dev` = web + worker in one terminal (`scripts/dev.ts`). |
 | Hosting | **Railway** | `web` + `worker` services from one Dockerfile, Postgres, bucket. Health `/api/health`. |
 
 ## 3. How a request flows
@@ -180,7 +181,9 @@ the `message` on failure, `form.reset()` + `toast.success` on success. See
 2. `handlers/project-export.ts`: `boss.work<Payload>(QUEUES.PROJECT_EXPORT, async (jobs) => { for (const job of jobs) … })`.
 3. Register it in `handlers/index.ts`.
 4. Producer: `await enqueue(QUEUES.PROJECT_EXPORT, { projectId })` from a domain function or action.
-Handlers must be **idempotent** (retries happen). Scheduled work: `await boss.schedule(QUEUES.X, "0 3 * * *")` in `worker/index.ts`.
+Handlers must be **idempotent** (retries happen). Keep `batchSize: 1` (the default): a throw fails and
+retries the whole batch, repeating side effects for jobs that already succeeded. Batch only with
+`perJobResults: true`. Scheduled work: `await boss.schedule(QUEUES.X, "0 3 * * *")` in `worker/index.ts`.
 Track long jobs with a status column on the entity (`state: 'queued' | 'running' | 'done' | 'failed'`), never by polling pg-boss from the UI.
 
 ### 5.7 Email
@@ -208,6 +211,12 @@ Public (browser) vars must be prefixed `NEXT_PUBLIC_`.
 - Flows: password (`authClient.signIn.email`), 6-digit code (`emailOtp.sendVerificationOtp` →
   `/verify` → `signIn.emailOtp`), magic link (`signIn.magicLink`), forgot/reset password. All emails
   arrive in Mailpit locally.
+- **Every account confirms its email before it gets a session** (`requireEmailVerification`). A password
+  sign-up, or a password sign-in that was never confirmed, gets a 403 `EMAIL_NOT_VERIFIED` and an
+  "email-verification" code; `/verify?purpose=verify` calls `emailOtp.verifyEmail` (signs them in, keeps
+  the password). Never confirm with a *sign-in* code — on an unconfirmed account that deletes the
+  password (anti-takeover). This is what makes `SIGNUP_ALLOWLIST` mean anything: otherwise anyone can
+  sign up as an allowed address. Consequence: production needs working email before anyone can join.
 - **Server**: `getSession()` (nullable), `requireSession()` (redirects), `requireSessionAction()` (throws).
   `(app)/layout.tsx` guards every route inside it for UX, but layouts don't re-render on client-side
   navigation — so **every page calls `requireSession()` and every action calls `requireSessionAction()`
@@ -246,13 +255,17 @@ Don't unit-test React components or Drizzle queries; the e2e spec covers them. S
 ## 9. Git workflow (solo builder, reviewer merges)
 
 - Work on the **working branch** named in the repo's `AGENTS.md` (default `dev`). Never commit to `main`.
-- `/stack:ship` = merge `origin/main` into the working branch (so Matt's fixes flow back) → `bun run check`
+- `/stack:ship` = merge `origin/main` into the working branch (so reviewed fixes flow back) → `bun run check`
   → conventional commit → `git push`. Never `--force`, never `reset --hard`, never rewrite pushed history.
   Conflicts → resolve if trivial, else stop and ask. Guard-rails enforce this twice: the plugin's
   PreToolUse hook (`scripts/guard.sh`, only inside stack projects) and `.githooks/pre-push`.
-  Override for a deliberate push to main (Matt only): `STACK_ALLOW_MAIN=1 git push`.
+  The reviewer pushes to main from their own shell (`STACK_ALLOW_MAIN=1 git push`); inside Claude Code the
+  hook only honours that for a new app's first push.
 - Commit per feature or coherent slice: `feat(scope): …`, `fix(scope): …`, `chore: …`, `test(e2e): …`,
   `refactor(scope): …`, `docs: …`. Subject ≤ 72 chars, imperative.
+- **CI** (`.github/workflows/ci.yml`): every push runs `check`, the production build and the e2e suite
+  against real Postgres/RustFS/Mailpit. Once live, `wip` saves stay local (never pushed), and Railway's
+  "Wait for CI" means only green commits deploy.
 - Secrets never enter git: `.env.local` is ignored; keys go in Railway variables.
 
 ## 10. Deployment (Railway)
@@ -261,8 +274,10 @@ One Railway project per app: **`web`** (Dockerfile → `railway.toml`; start = m
 health `/api/health`), **`worker`** (same Dockerfile; config path `railway.worker.toml`; start
 `bun run worker`), **Postgres**, and a **bucket** (S3-compatible). Env vars on both app services:
 `APP_URL`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `BETTER_AUTH_SECRET`, `EMAIL_FROM`,
-`RESEND_API_KEY`, `SIGNUP_ALLOWLIST`, `S3_*` (from the bucket), `LOG_LEVEL=info`, `NODE_ENV=production`.
-Deploy branch is `dev` (the builder sees their work live; `main` is the reviewed copy). Postgres backups on.
+`RESEND_API_KEY`, `SIGNUP_ALLOWLIST`, `S3_*` (from the bucket), `LOG_LEVEL=info`,
+`NODE_ENV=production`. Deploy branch is `dev` (the builder sees their work live; `main` is the reviewed
+copy), with **Wait for CI** on for both services. The worker restarts `ALWAYS` (no retry cap — nothing
+else would notice it was down); `/stack:status` checks both services. Postgres backups on.
 `/stack:deploy` does this.
 
 ## 11. Explicitly not in v1 (and how to add later)
@@ -272,10 +287,31 @@ Deploy branch is `dev` (the builder sees their work live; `main` is the reviewed
 | AI features | a feature calls for it | Vercel AI SDK + `@ai-sdk/anthropic`; `src/lib/ai/`; `ANTHROPIC_API_KEY` in env |
 | Payments | first paid plan | Stripe Checkout + webhook route handler + `subscription` table; job for webhook side effects |
 | Roles / teams | second user type or org sharing | better-auth `organization`/`admin` plugin |
-| Error tracking | first real users | `@sentry/nextjs`, DSN in env |
 | Analytics | first marketing question | PostHog |
 | Realtime | a screen must update without refresh | start with polling; then SSE route handler |
 | Cron | first scheduled task | `boss.schedule()` in worker — no new service |
 | Search | LIKE isn't enough | Postgres full-text (`tsvector`) before any search service |
 | Caching | a measured slow page | Next `use cache` (`cacheComponents`) — cheat sheet |
 | i18n, feature flags, admin panel, monorepo, tRPC, react-query, Redis | — | not until a concrete, present need |
+
+## 12. Versions: latest stable, always
+
+- **Policy**: every npm dependency, the runtimes (newest **Node LTS**, newest **Bun**) and every Docker image
+  stay on their newest *stable* release. Not betas, RCs or canaries (e.g. Drizzle 1.0 while it's an RC,
+  Postgres 19rc). Falling behind is how a stack rots: MinIO's images vanished from Docker Hub and every
+  app pinned to them broke on a fresh machine.
+- **Checked automatically**: `${CLAUDE_PLUGIN_ROOT}/scripts/versions.ts` runs at the start of every session
+  (cached 6 h) and at the start of every `/stack:feature`. It compares `package.json` (via `bun outdated`),
+  `packageManager`, the Dockerfile, `docker-compose.yml`, the workflow actions and the plugin against the
+  live registries, and prints the exact `bun add …@latest` lines.
+- **3-day cooldown**: `bunfig.toml` `[install] minimumReleaseAge = 259200`, and the check ignores npm,
+  Bun, Node, Docker and Action releases younger than that. Hijacked releases are usually pulled within
+  hours; "latest" means latest *that has survived three days*. Never bypass it.
+- **Upgraded deliberately**: `/stack:upgrade` — patch/minor in one go; each major on its own after reading its
+  release notes; shadcn components refreshed from the registry; runtimes and images bumped; then the full
+  check, e2e and a browser click-through. Saved as its own change, before feature work.
+- **New dependencies**: `bun add <pkg>@latest`, `bunx shadcn@latest add <component>`; read the docs for the
+  installed version (Context7) rather than relying on memory.
+- **Image tags are pinned** (`rustfs/rustfs:1.0.4`, `axllent/mailpit:v1.32.0`) so upgrades are visible in
+  git. Postgres pins only its major (`18-alpine`): a major bump means resetting local data, and the live
+  database is upgraded separately on Railway (needs Matt).

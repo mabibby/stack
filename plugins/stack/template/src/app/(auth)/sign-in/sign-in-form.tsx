@@ -36,6 +36,13 @@ export function SignInForm() {
       email: values.email,
       password: values.password,
     });
+    if (error?.code === "EMAIL_NOT_VERIFIED") {
+      // Right password, but the address was never confirmed. better-auth has just emailed a code.
+      setBusy(null);
+      toast.info("Confirm your email first — we've sent you a code.");
+      router.push(`/verify?purpose=verify&email=${encodeURIComponent(values.email)}`);
+      return;
+    }
     setBusy(null);
     if (error) {
       toast.error(error.message ?? "Sign in failed");
@@ -151,10 +158,10 @@ export function SignInForm() {
           </FieldGroup>
         </form>
 
-        <div className="my-4 flex items-center gap-3 text-muted-foreground text-xs">
-          <span className="h-px flex-1 bg-border" />
+        <div className="text-muted-foreground my-4 flex items-center gap-3 text-xs">
+          <span className="bg-border h-px flex-1" />
           or, without a password
-          <span className="h-px flex-1 bg-border" />
+          <span className="bg-border h-px flex-1" />
         </div>
 
         <div className="grid gap-2">
@@ -166,7 +173,7 @@ export function SignInForm() {
           </Button>
         </div>
 
-        <p className="mt-6 text-center text-muted-foreground text-sm">
+        <p className="text-muted-foreground mt-6 text-center text-sm">
           No account?{" "}
           <Link href="/sign-up" className="text-foreground underline-offset-4 hover:underline">
             Create one

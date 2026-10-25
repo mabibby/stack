@@ -36,7 +36,9 @@ two lines to copy-paste:
 cd ~/projects/my-first-app
 claude
 ```
-Then say **"start my app"** — it opens in your browser. From there, describe features.
+The first time, Claude Code asks whether you **trust this folder** — choose **Yes** (it's your app;
+saying no makes Claude ask permission for every step). Then say **"start my app"** — it opens in your
+browser. From there, describe features.
 
 ## Every day
 
@@ -51,8 +53,8 @@ Inside Claude Code, talk in product words. You don't need to remember commands; 
 |---|---|---|
 | "start my app" | `/stack:start` | gets it running and opens it in your browser |
 | "let users log a workout with a date and notes" | `/stack:feature` | writes a short plan, builds it the standard way, tests it, shows you screenshots (desktop + phone) |
-| "ship it" / "send it to Matt" | `/stack:ship` | brings in Matt's latest, runs all checks, saves, sends (never touches `main`) |
-| "where are we?" | `/stack:status` | what's saved, what's sent, what Matt has merged, what's live |
+| "ship it" / "save this" | `/stack:ship` | brings in any fixes, runs all checks, saves to GitHub (never touches `main`) |
+| "where are we?" | `/stack:status` | what's saved, which features exist, what's running, what's live |
 | "undo that" | `/stack:undo` | goes back safely, after telling you what will be lost |
 | "we also need to store the gym location" | `/stack:db-change` | changes what the app stores, safely |
 | "put it online" | `/stack:deploy` | Railway: web + worker + database + file storage, live URL |
@@ -74,7 +76,7 @@ the app's `AGENTS.md`, so you never need to know them.
 
 Bun · TypeScript · Next.js (app router) · Postgres + Drizzle · better-auth (password, email code, magic
 link, optional invite-only sign-up) · pg-boss background jobs + worker · Tailwind + shadcn/ui ·
-react-hook-form + zod · Biome · Playwright + `bun test` · Docker Compose for local Postgres/MinIO/Mailpit ·
+react-hook-form + zod · Biome · Playwright + `bun test` · Docker Compose for local Postgres/RustFS/Mailpit ·
 one `bun run dev` for web + worker · Dockerfile + Railway config · guard-rails against pushing to
 `main`, force pushes and history rewriting. A worked example feature ("Notes") shows the pattern; it's
 removed when you build your first real one.
@@ -100,7 +102,7 @@ How Claude talks to you: [`plugins/stack/references/voice.md`](plugins/stack/ref
 | GitHub account | you | Free. Apps are private repos under your account; Matt is invited as admin. |
 | Docker Desktop | you | Free for small businesses. Installed for you. |
 | Railway | you | Needed to put an app online. Hobby plan (a few dollars a month) plus usage. Card required. |
-| Domain + email sending (Resend) | Matt | Needs DNS. Until Matt sends you a key, the live app can only sign in with a password (no email codes or links). |
+| Domain + email sending (Resend) | Matt | Needs DNS. Every new account confirms its email with a code, so until Matt sends the key nobody can sign up on the live app. |
 | Merging to `main`, anything the guard-rails block | Matt | |
 
 ## When Matt updates the toolkit
@@ -113,15 +115,29 @@ In Terminal: `stack update`. Then quit and reopen Claude Code.
   `~/.local/bin`, adds the marketplace from that clone) · `bin/stack` (new/ls/update/doctor) ·
   `plugins/stack/scripts/new-app.sh` (stamps the template, assigns a port slot, records it in
   `~/.stack/apps.tsv`) · `plugins/stack/template/` (placeholders `__APP_NAME__`, `__APP_TITLE__`,
-  `__DB_NAME__`, `__PORT_SLOT__`, `__PORT_WEB__`, `__PORT_PG__`, `__PORT_MINIO__`,
-  `__PORT_MINIO_CONSOLE__`, `__PORT_SMTP__`, `__PORT_MAIL__`; slot k = 3000+k, 5432+k, 9000+2k, 9001+2k,
+  `__DB_NAME__`, `__PORT_SLOT__`, `__PORT_WEB__`, `__PORT_PG__`, `__PORT_S3__`,
+  `__PORT_S3_CONSOLE__`, `__PORT_SMTP__`, `__PORT_MAIL__`; slot k = 3000+k, 5432+k, 9000+2k, 9001+2k,
   1025+k, 8025+k) · skills in `plugins/stack/skills/*/SKILL.md` · principles in `plugins/stack/references/`.
 - Guard-rail hook: `plugins/stack/hooks/hooks.json` → `scripts/guard.sh` (only active in folders whose
   `AGENTS.md` carries the template marker). Git-level twin: `template/.githooks/pre-push`. Pushing to
   `main` from a stack project on your own machine: `STACK_ALLOW_MAIN=1 git push origin main`.
-- Upgrade dependencies: stamp a copy (`new-app.sh <n> "<T>" <dir>` with `STACK_REGISTRY=/tmp/x`),
-  `bun update`, `bun run check` + `bun run test:e2e`, copy back `package.json`/`bun.lock`
-  (re-placeholder the lockfile name), regenerate `drizzle/` if the auth schema changed.
+- Session rules: the SessionStart hook (`scripts/versions.ts --hook`) injects
+  `references/session-rules.md` + `references/voice.md` into every session in a stack project, so
+  changing how Claude behaves (voice, when to mention you, versions) reaches existing apps on
+  `stack update` — no need to edit their `AGENTS.md`. Keep repo facts in the template `AGENTS.md`.
+- Biome formats Markdown and rewrites `__PLACEHOLDER__` as `**PLACEHOLDER**`; `new-app.sh` accepts
+  both and refuses to finish if any placeholder is left unfilled.
+- Live apps: GitHub Actions CI gates Railway
+  deploys ("Wait for CI"); email (Resend) is required for anyone to sign up, since every account
+  confirms its address with a code.
+- Keep the template on the latest stable everything (new apps start current, so their first session
+  doesn't open with an upgrade): `bun plugins/stack/scripts/versions.ts --dir plugins/stack/template`
+  shows what's behind. To upgrade: stamp a copy (`new-app.sh <n> "<T>" <dir>` with `STACK_REGISTRY=/tmp/x`),
+  follow `plugins/stack/skills/upgrade/SKILL.md` in it (check + setup + e2e + `docker build`), then copy
+  back `package.json`/`bun.lock` (re-placeholder `name` and the `dev:web` port), `biome.json`,
+  `src/components/ui/`, and anything the upgrade touched; run that copy's `node_modules/.bin/biome check
+  --write .` inside `plugins/stack/template`. If the auth schema changed, regenerate `drizzle/` as a fresh
+  `0000_init` (existing apps get their own migration via `/stack:upgrade`).
 - Validate: `claude plugin validate .` · Release: bump `plugin.json` version, commit, push to `main`;
   the partner runs `stack update`.
 - Your own machine: `/plugin marketplace add /path/to/this/repo`, or run `install.sh` with

@@ -31,13 +31,14 @@ export function SignUpForm({ inviteOnly = false }: { inviteOnly?: boolean }) {
   const onSubmit = form.handleSubmit(async (values) => {
     setPending(true);
     const { error } = await authClient.signUp.email(values);
-    setPending(false);
     if (error) {
+      setPending(false);
       toast.error(error.message ?? "Couldn't create account");
       return;
     }
-    router.push("/dashboard");
-    router.refresh();
+    setPending(false);
+    // No session yet: the account must prove it owns the address. A code is already on its way.
+    router.push(`/verify?purpose=verify&email=${encodeURIComponent(values.email)}`);
   });
 
   return (
@@ -109,7 +110,7 @@ export function SignUpForm({ inviteOnly = false }: { inviteOnly?: boolean }) {
             </SubmitButton>
           </FieldGroup>
         </form>
-        <p className="mt-6 text-center text-muted-foreground text-sm">
+        <p className="text-muted-foreground mt-6 text-center text-sm">
           Already have an account?{" "}
           <Link href="/sign-in" className="text-foreground underline-offset-4 hover:underline">
             Sign in

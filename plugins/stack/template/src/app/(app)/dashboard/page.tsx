@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-semibold text-2xl tracking-tight">Hi {user.name || "there"} 👋</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Hi {user.name || "there"} 👋</h1>
         <p className="text-muted-foreground">
           You're signed in. This is your app's home — replace it with something useful.
         </p>

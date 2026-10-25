@@ -1,7 +1,7 @@
 ---
 name: setup
 description: >
-  Check a Mac is ready to build stack apps and fix what's missing by running Matt's installer
+  Check a Mac is ready to build stack apps and fix what's missing by running the stack installer
   (Xcode tools, Homebrew, Node, Bun, Docker Desktop, GitHub CLI, Railway CLI, Claude Code plugins,
   the `stack` command, GitHub sign-in). Use when the user says "set up my computer", "get me ready",
   "install everything", "first time", "stack command not found", or runs /stack:setup. Mac only.

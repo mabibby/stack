@@ -19,6 +19,13 @@ import { logger } from "@/lib/observability/logger";
  *   2. 6-digit email code (OTP)
  *   3. magic link
  * Auth emails are sent inline (user is waiting). Non-urgent mail (welcome) goes via the job queue.
+ *
+ * Every account must prove it owns its email before it can sign in. A password sign-up (or a
+ * password sign-in that was never confirmed) gets no session — it's emailed an "email-verification"
+ * code instead, and /verify?purpose=verify confirms it and signs them in, keeping the password.
+ * (Don't use a sign-in code for this: signing in by code to an unconfirmed account deletes its
+ * password, by design, in case someone else set it.) Without this, anyone could type an allowed
+ * address (SIGNUP_ALLOWLIST) and walk into an invite-only app.
  */
 export const auth = betterAuth({
   appName: "__APP_TITLE__",
@@ -36,11 +43,16 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    autoSignIn: true,
+    requireEmailVerification: true,
     minPasswordLength: 10,
     sendResetPassword: async ({ user, url }) => {
       await sendEmail({ to: user.email, ...resetPasswordEmail(url) });
     },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
@@ -76,6 +88,7 @@ export const auth = betterAuth({
     emailOTP({
       otpLength: 6,
       expiresIn: 60 * 5,
+      overrideDefaultEmailVerification: true, // verification emails are codes, not links
       sendVerificationOTP: async ({ email, otp, type }) => {
         await sendEmail({
           to: email,

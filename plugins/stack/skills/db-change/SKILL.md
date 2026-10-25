@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion
 # /stack:db-change — schema change, the safe way
 
 Rules from `architecture.md` §5.1 / §7 apply. To the user this is "changing what the app stores"
-(`/references/voice.md`) — never say migration, schema or column to them. The short version:
+(`${CLAUDE_PLUGIN_ROOT}/references/voice.md`) — never say migration, schema or column to them. The short version:
 
 - Schema is code: `src/lib/db/schema/<feature>.ts`, exported from `schema/index.ts`.
 - Migrations are generated, reviewed, committed, applied — in that order. **Never** `db:push`, never

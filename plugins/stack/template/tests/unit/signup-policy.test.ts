@@ -7,8 +7,8 @@ describe("isSignupAllowed", () => {
   });
 
   test("exact email match, case-insensitive", () => {
-    const list = ["matt@example.com"];
-    expect(isSignupAllowed("Matt@Example.com", list)).toBe(true);
+    const list = ["you@example.com"];
+    expect(isSignupAllowed("You@Example.com", list)).toBe(true);
     expect(isSignupAllowed("other@example.com", list)).toBe(false);
   });
 

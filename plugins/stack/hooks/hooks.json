@@ -1,5 +1,5 @@
 {
-  "description": "stack guard-rails inside stack projects: no pushes to main, no force pushes, no history rewriting, no drizzle push, no rm -rf of the repo. Other repos are untouched.",
+  "description": "stack hooks, active only inside stack projects: guard-rails on Bash (no pushes to main, no force pushes, no history rewriting, no drizzle push, no rm -rf of the repo) and, at session start, the plugin's working rules (voice, Matt in the background, versions) plus a check that the project is on the latest stable versions of everything.",
   "hooks": {
     "PreToolUse": [
       {
@@ -9,6 +9,17 @@
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/guard.sh\"",
             "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PLUGIN_ROOT}/scripts/versions.ts\" --hook",
+            "timeout": 30
           }
         ]
       }

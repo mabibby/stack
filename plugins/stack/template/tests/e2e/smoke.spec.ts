@@ -48,3 +48,54 @@ test("sign in with email code, create and delete a note", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Your notes (0)" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Delete First note" })).toHaveCount(0);
 });
+
+test("password sign-up must confirm the email before getting in", async ({ page }) => {
+  const email = `e2e-pw-${Date.now()}@example.com`;
+
+  await page.goto("/sign-up");
+  await page.getByLabel("Name").fill("Pat");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill("correct-horse-1");
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/verify\?purpose=verify&email=/);
+
+  // No session until the code is entered.
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/sign-in/);
+
+  // Password sign-in is refused while unconfirmed, and sends them to enter a code.
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill("correct-horse-1");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/verify\?purpose=verify&email=/);
+
+  await page.getByLabel("One-time code").fill(await latestOtpFor(email));
+  await expect(page).toHaveURL(/\/dashboard/);
+
+  // Confirming the email keeps the password they chose.
+  await page.context().clearCookies();
+  await page.goto("/sign-in");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill("correct-horse-1");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+});
+
+test("an unconfirmed password account cannot get a session", async ({ request }) => {
+  // The invite-only bypass this guards against: sign up as someone else's address.
+  const email = `e2e-claim-${Date.now()}@example.com`;
+  const headers = { origin: new URL(test.info().project.use.baseURL ?? "").origin };
+  const signUp = await request.post("/api/auth/sign-up/email", {
+    headers,
+    data: { email, password: "attacker-pass-1", name: "Not them" },
+  });
+  expect(signUp.ok()).toBeTruthy();
+  expect((await signUp.json()).token ?? null).toBeNull();
+
+  const signIn = await request.post("/api/auth/sign-in/email", {
+    headers,
+    data: { email, password: "attacker-pass-1" },
+  });
+  expect(signIn.status()).toBe(403);
+  expect(await signIn.json()).toMatchObject({ code: "EMAIL_NOT_VERIFIED" });
+});

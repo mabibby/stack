@@ -9,7 +9,7 @@ export default async function AuthLayout({ children }: LayoutProps<"/">) {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center p-6">
-      <Link href="/" className="mb-8 font-semibold text-lg tracking-tight">
+      <Link href="/" className="mb-8 text-lg font-semibold tracking-tight">
         __APP_TITLE__
       </Link>
       <div className="w-full max-w-sm">{children}</div>

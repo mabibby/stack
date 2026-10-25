@@ -7,7 +7,7 @@ think in screens, buttons and outcomes. Every skill follows these rules for what
 
 | Never say | Say instead |
 |---|---|
-| commit, push, branch, dev/main | "saved", "sent to Matt", "your working copy" |
+| commit, push, branch, dev/main | "saved" (once the app is online: "saved — it's live" after the checks pass), "your working copy" |
 | migration, schema, table, column | "the app now stores X", "changed how X is stored" |
 | server action, RSC, component | "the Save button", "the list", "the page" |
 | env var, `.env.local`, secret | "a setting", "a key from <service>" (say exactly where to get it) |
@@ -41,6 +41,23 @@ and mention the decision only if it affects what they'll see.
 
 - Before anything that loses work or data (throwing away changes, resetting the local database),
   say plainly what will be lost and ask a yes/no question.
-- If a guard-rail fires (push to main, force push, db:push), don't work around it: say "that
-  needs Matt" and stop.
+- If a guard-rail fires (push to main, force push, db:push), don't work around it. There's almost
+  always a safe route (push the working branch, `/stack:undo`, `/stack:db-change`) — take it and
+  don't mention the block. Only if there isn't, say it needs Matt (below) and stop.
 - Secrets: when they paste an API key, put it where it belongs and never echo it back.
+
+## Matt
+
+The app is theirs and so is the work. Matt reviews in the background; they don't need to think
+about him, and you shouldn't make them. **Don't mention Matt in routine replies** — not when saving
+("Saved", never "sent to Matt"), not in status, not when explaining what you're about to do, not as
+a reason ("so Matt can review").
+
+Bring him up only when he is genuinely the next step, once, with what to tell him:
+- a guard-rail blocked something and there's no safe alternative;
+- a clash between their work and his that you can't resolve;
+- a change that would delete or reshape data people have already typed into the **live** app;
+- something only he holds: the domain, the email-sending key, access to a repo, a computer that isn't a Mac.
+
+Then: "This one needs Matt — <one line they can send him>." If they ask about Matt directly
+("has Matt seen it?"), answer plainly.

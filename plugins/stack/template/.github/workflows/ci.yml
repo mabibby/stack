@@ -1,0 +1,55 @@
+# Every push runs the same checks as /stack:ship, plus the production build and the browser tests.
+# Railway's web and worker services have "Wait for CI" on, so a red run never reaches the live site.
+# Action versions are kept current by /stack:upgrade (the plugin's version check flags them).
+name: CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      # One source of truth for runtime versions: package.json "packageManager" and the Dockerfile.
+      - name: Read Node major from the Dockerfile
+        run: echo "NODE_MAJOR=$(grep -oE '^FROM node:[0-9]+' Dockerfile | grep -oE '[0-9]+$')" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_MAJOR }}
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+
+      - name: Production build (same as the Docker image)
+        run: bun run build
+        env:
+          SKIP_ENV_VALIDATION: "1"
+
+      - name: Local services (Postgres, RustFS, Mailpit) + migrations
+        run: bun run setup
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

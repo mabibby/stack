@@ -22,7 +22,7 @@ const envSchema = z.object({
   SMTP_URL: z.url().optional(),
   RESEND_API_KEY: z.string().optional(),
 
-  // Object storage (S3-compatible: MinIO locally, Railway bucket / R2 / S3 in prod).
+  // Object storage (S3-compatible: RustFS locally, Railway bucket / R2 / S3 in prod).
   S3_ENDPOINT: z.url().optional(),
   S3_REGION: z.string().default("us-east-1"),
   S3_BUCKET: z.string().min(1),
@@ -36,7 +36,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
 
   // Who may create an account. Empty = anyone. Otherwise comma-separated emails and/or
-  // @domains, e.g. "matt@example.com,@semanti.com". Checked for every sign-up method.
+  // @domains, e.g. "you@example.com,@yourcompany.com". Checked for every sign-up method.
   SIGNUP_ALLOWLIST: z
     .string()
     .default("")

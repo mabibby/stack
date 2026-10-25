@@ -40,7 +40,7 @@ export function NotesList({ notes }: { notes: NoteListItem[] }) {
             </CardHeader>
             {n.body ? (
               <CardContent>
-                <p className="whitespace-pre-wrap text-muted-foreground text-sm">{n.body}</p>
+                <p className="text-muted-foreground text-sm whitespace-pre-wrap">{n.body}</p>
               </CardContent>
             ) : null}
           </Card>

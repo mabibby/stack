@@ -10,10 +10,10 @@ export default async function HomePage() {
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
-      <h1 className="font-semibold text-4xl tracking-tight">__APP_TITLE__</h1>
-      <p className="max-w-md text-balance text-muted-foreground">
+      <h1 className="text-4xl font-semibold tracking-tight">__APP_TITLE__</h1>
+      <p className="text-muted-foreground max-w-md text-balance">
         Replace this landing page with your product's story. Everything behind{" "}
-        <code className="rounded bg-muted px-1">/dashboard</code> requires sign-in.
+        <code className="bg-muted rounded px-1">/dashboard</code> requires sign-in.
       </p>
       <div className="flex gap-3">
         <Button asChild>

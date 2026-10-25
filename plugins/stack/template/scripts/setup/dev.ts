@@ -3,9 +3,9 @@
  * One-command local bootstrap: `bun run setup`. Idempotent — safe to re-run any time.
  *  1. Ensure Docker is running.
  *  2. Create .env.local from .env.example (with a fresh BETTER_AUTH_SECRET) if missing.
- *  3. docker compose up -d  (Postgres, MinIO + bucket, Mailpit).
+ *  3. docker compose up -d  (Postgres, RustFS, Mailpit).
  *  4. Wait for health checks.
- *  5. Run DB migrations, then seed.
+ *  5. Run DB migrations, seed, and create the storage bucket.
  */
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -90,9 +90,9 @@ const waitHealthy = async (service: string, timeoutMs = 90_000) => {
     `${container} didn't become healthy in ${timeoutMs / 1000}s — try \`docker compose logs ${service}\``,
   );
 };
-log("waiting for postgres, minio, mailpit…");
+log("waiting for postgres, rustfs, mailpit…");
 await waitHealthy("postgres");
-await waitHealthy("minio");
+await waitHealthy("rustfs");
 await waitHealthy("mailpit");
 log("infrastructure healthy");
 
@@ -116,6 +116,8 @@ log("running migrations");
 run("bun", ["run", "db:migrate"], envLocal);
 log("seeding");
 run("bun", ["run", "db:seed"], envLocal);
+log("file storage bucket");
+run("bun", ["run", "storage:setup"], envLocal);
 
 // 6. git guard-rails (no pushes to main, no force pushes) — only once this is a git repo.
 if (existsSync(".git")) {
@@ -129,6 +131,6 @@ console.log(`
   bun run dev          → app on http://localhost:__PORT_WEB__ (web + background worker together)
 
   Mailpit (all email lands here):  http://localhost:__PORT_MAIL__
-  MinIO console:                    http://localhost:__PORT_MINIO_CONSOLE__  (minio / minio-secret)
+  Files (RustFS console):           http://localhost:__PORT_S3_CONSOLE__/rustfs/console/  (rustfs / rustfs-secret)
   Drizzle Studio (browse the DB):   bun run db:studio
 `);

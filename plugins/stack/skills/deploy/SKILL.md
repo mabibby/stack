@@ -17,7 +17,7 @@ and MCP details. This file is the *what*; that skill is the *how*. Talk to the u
 Target shape (`architecture.md` §10): one Railway project → services **web**, **worker**, **Postgres**,
 plus a **bucket**. Same Dockerfile for web and worker; different start commands via
 `railway.toml` (web) and `railway.worker.toml` (worker). **The `dev` branch deploys** (the builder
-sees their work live; `main` is Matt's reviewed copy). Don't ask about this.
+sees their work live; `main` is the reviewed copy). Don't ask about this.
 
 ## Before starting: the two product questions (ask both at once)
 
@@ -25,11 +25,12 @@ sees their work live; `main` is Matt's reviewed copy). Don't ask about this.
    I list". Recommend the second for anything that isn't a public product. Their answer becomes
    `SIGNUP_ALLOWLIST` (comma-separated emails and/or `@domains`; empty = anyone). Make sure their own
    email is on the list.
-2. **Does this need to send email from a real address?** Sign-in codes, magic links and password resets
-   need it. That requires a domain and a Resend account, which is Matt's side (DNS). If they don't
-   have `RESEND_API_KEY` + a verified sending address from Matt yet: deploy anyway — password sign-in
-   works without email — and say plainly that codes/links/resets will start working once Matt sends
-   the key.
+2. **Email is required before anyone can sign up.** Every new account confirms its address with an
+   emailed code (that's what keeps invite-only apps closed), so the live app needs `RESEND_API_KEY`
+   and a verified sending address — a domain + Resend account that Matt sets up (DNS). Don't ask
+   about it; check whether they have the key. If not: deploy anyway so the site is up, say once that
+   "nobody can create an account until the email key from Matt is in", and that's the one thing
+   that needs him.
 
 ## First deploy
 
@@ -51,27 +52,34 @@ sees their work live; `main` is Matt's reviewed copy). Don't ask about this.
    DATABASE_URL=${{Postgres.DATABASE_URL}}
    BETTER_AUTH_SECRET=<openssl rand -base64 32 — generate, never reuse local>
    EMAIL_FROM="<App Title> <hello@yourdomain>"
-   RESEND_API_KEY=<from Matt / resend.com — needs a verified sending domain>
+   RESEND_API_KEY=<resend.com key for a verified sending domain — Matt provides it>
    SIGNUP_ALLOWLIST=<from question 1; empty = anyone>
    S3_ENDPOINT / S3_REGION / S3_BUCKET / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY  (from the bucket)
-   S3_FORCE_PATH_STYLE=false               # true only for MinIO
+   S3_FORCE_PATH_STYLE=false               # true only for local RustFS
    LOG_LEVEL=info
    ```
    No `SMTP_URL` in prod.
-7. **Domain**: `railway domain` on web (or custom domain — Matt's DNS). Then set `APP_URL` to it and redeploy web.
+7. **Domain**: `railway domain` on web (a custom domain needs DNS — Matt's side). Then set `APP_URL` to it and redeploy web.
+7b. **Bucket**: `railway run --service web bun run storage:setup` once the domain is set — creates the
+   bucket if missing and allows uploads from `APP_URL` only (CORS). If it logs `storage.cors.unsupported`,
+   set the same rule in the bucket's dashboard.
+7c. **Deploy only green code**: in the Railway dashboard (`railway open`), on BOTH web and worker →
+   Settings → Source → turn on **Wait for CI**. Railway then deploys a push only after the GitHub
+   Actions check (`.github/workflows/ci.yml`) passes. Confirm the first run is green:
+   `gh run list --limit 1`. This is what stops a broken save from reaching people.
 8. **Backups**: turn on Postgres backups in the Railway dashboard (Postgres service → Backups) and say
    you did. Data people type into a live app must be recoverable.
 9. **Verify**: `curl https://<domain>/api/health` → `{"ok":true,"db":"up"}`; open the site in their
    browser (`open https://<domain>`) and create the first account with them; `railway logs --service
    worker` shows `worker.ready`; welcome email arrives (if Resend set).
-10. Tell the user the live URL (opened it), who can sign up, and what's pending (e.g. email via
-    Matt). Commit any `AGENTS.md` change via `/stack:ship`. Record the live URL in `AGENTS.md`
+10. Tell the user the live URL (opened it), who can sign up, and anything not working yet (e.g.
+    email codes until the key arrives). Commit any `AGENTS.md` change via `/stack:ship`. Record the live URL in `AGENTS.md`
     under "## Local URLs" as `Live: https://…`.
 
 ## Later
 
-- Every `/stack:ship` to `dev` redeploys automatically. Say so once: "each time you send work to
-  Matt it also goes live within a few minutes."
+- Every `/stack:ship` to `dev` redeploys automatically once CI passes. Say so once: "from now on,
+  each time you save, it goes live a few minutes later — after the checks pass."
 - New env var in code → add it to Railway (both services) BEFORE pushing the code that requires it.
 - Deploy failing → `railway logs --deployment` for the build/runtime error; health failing → app
   probably can't reach the DB or a required env var is missing (the app prints "Invalid environment

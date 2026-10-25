@@ -9,7 +9,7 @@ import { createId } from "@paralleldrive/cuid2";
 import { env } from "@/lib/env";
 
 /**
- * Object storage. Locally this is MinIO (S3_ENDPOINT + path-style); in
+ * Object storage. Locally this is RustFS (S3_ENDPOINT + path-style); in
  * production point the same env vars at a Railway bucket / R2 / S3.
  *
  * Pattern: the browser NEVER gets our credentials. Server hands out short-lived

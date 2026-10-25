@@ -9,7 +9,7 @@ if (process.env.NODE_ENV === "production" || process.env.RAILWAY_ENVIRONMENT) {
   console.error("Refusing to reset a non-local database.");
   process.exit(1);
 }
-console.log("▸ docker compose down -v (deleting local Postgres + MinIO data)");
+console.log("▸ docker compose down -v (deleting local Postgres + file storage data)");
 spawnSync("docker", ["compose", "down", "-v", "--remove-orphans"], { stdio: "inherit" });
 console.log("▸ re-running setup");
 const r = spawnSync("bun", ["run", "setup"], { stdio: "inherit" });

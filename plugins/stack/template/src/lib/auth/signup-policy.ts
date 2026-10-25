@@ -1,7 +1,7 @@
 /**
  * Who may create an account. Driven by SIGNUP_ALLOWLIST in env:
  *   ""                                  → anyone can sign up (local default)
- *   "matt@example.com,@semanti.com"     → only those emails / that domain
+ *   "you@example.com,@yourcompany.com" → only those emails / that domain
  * Enforced in ONE place (better-auth's user.create.before hook) so every way
  * in — password, email code, magic link — obeys it.
  */

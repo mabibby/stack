@@ -37,8 +37,8 @@ export function UserMenu({ user }: { user: SessionUser }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
-          <div className="truncate font-medium text-sm">{user.name || "—"}</div>
-          <div className="truncate text-muted-foreground text-xs">{user.email}</div>
+          <div className="truncate text-sm font-medium">{user.name || "—"}</div>
+          <div className="text-muted-foreground truncate text-xs">{user.email}</div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={signOut}>

@@ -2,8 +2,9 @@
 # worker. The SAME image serves both Railway services:
 #   web    → start command: bun run db:migrate && bun run start   (railway.toml)
 #   worker → start command: bun run worker                        (railway.worker.toml)
-FROM node:22-bookworm-slim AS base
-COPY --from=oven/bun:1.3.14 /usr/local/bin/bun /usr/local/bin/bun
+# Versions: newest Node LTS + newest Bun, kept current by /stack:upgrade.
+FROM node:24-trixie-slim AS base
+COPY --from=oven/bun:1.4.4 /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 

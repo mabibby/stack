@@ -38,6 +38,7 @@ cmd_new() {
 
   say "Installing packages"
   bun install
+  bun run lint:fix >/dev/null 2>&1 || true # re-align Markdown tables etc. after the names/ports were stamped in
   say "Starting the local database, file store and mailbox (Docker)"
   bun run setup
   say "Installing the test browser"
@@ -61,7 +62,7 @@ cmd_new() {
   fi
   STACK_ALLOW_MAIN=1 git push -q -u origin main
   git switch -qc dev
-  printf '%s\n' '- **Working branch:** `dev` — all commits go here; Matt merges to `main`.' >> AGENTS.md
+  printf '%s\n' '- **Working branch:** `dev` — all commits go here; `main` is the reviewed copy.' >> AGENTS.md
   git add AGENTS.md && git commit -qm "docs: record working branch" && git push -q -u origin dev
   ok "on branch dev, pushed to GitHub"
 
@@ -70,7 +71,7 @@ cmd_new() {
   printf '\n\033[1m✅ %s is ready.\033[0m\n\n' "$title"
   printf '  Next, copy-paste these two lines into Terminal:\n\n'
   printf '      cd %s\n      claude\n\n' "$dest"
-  printf '  Then tell Claude:  start my app\n'
+  printf '  When Claude asks whether you trust this folder, choose Yes. Then tell it:  start my app\n'
   printf '  App: %s · Emails the app sends: %s · Code: https://github.com/%s/%s\n\n' "$web" "$mail" "$owner" "$name"
 }
 
@@ -84,7 +85,7 @@ cmd_ls() {
     [[ -d "$path" ]] || running="(missing)"
     printf '%-4s %-24s %-28s %-8s %s\n' "$slot" "$name" "http://localhost:$web" "$running" "$path"
   done < "$REGISTRY"
-  printf '\nEmails: http://localhost:<8025+slot> · Files: http://localhost:<9001+2*slot>\nOpen one:  cd <folder> && claude\n'
+  printf '\nEmails: http://localhost:<8025+slot> · Files: http://localhost:<9001+2*slot>/rustfs/console/\nOpen one:  cd <folder> && claude\n'
 }
 
 cmd_update() {

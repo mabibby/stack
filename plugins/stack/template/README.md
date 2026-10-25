@@ -1,4 +1,4 @@
-# __APP_TITLE__
+# **APP_TITLE**
 
 Built on the **stack** template: Bun · Next.js · Postgres/Drizzle · better-auth · pg-boss · Tailwind/shadcn · Railway.
 
@@ -8,16 +8,16 @@ Prereqs (once): [Docker Desktop](https://www.docker.com/products/docker-desktop/
 
 ```bash
 bun install
-bun run setup        # starts Postgres/MinIO/Mailpit in Docker, migrates, seeds, writes .env.local
+bun run setup        # starts Postgres/RustFS/Mailpit in Docker, migrates, seeds, writes .env.local
 bun run dev          # http://localhost:__PORT_WEB__ — web app + background worker together
 ```
 
-| Thing | Where |
-|---|---|
-| App | http://localhost:__PORT_WEB__ |
-| Every email the app sends | http://localhost:__PORT_MAIL__ (Mailpit) |
-| Uploaded files | http://localhost:__PORT_MINIO_CONSOLE__ (MinIO console, `minio` / `minio-secret`) |
-| Database browser | `bun run db:studio` |
+| Thing                     | Where                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------- |
+| App                       | http://localhost:**PORT_WEB**                                                                     |
+| Every email the app sends | http://localhost:**PORT_MAIL** (Mailpit)                                                          |
+| Uploaded files            | http://localhost:**PORT_S3_CONSOLE**/rustfs/console/ (RustFS console, `rustfs` / `rustfs-secret`) |
+| Database browser          | `bun run db:studio`                                                                               |
 
 ## Everyday commands
 

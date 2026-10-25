@@ -2,7 +2,7 @@
 name: undo
 description: >
   Take a stack project back to a previous state safely: throw away work since the last save, or undo
-  the last save(s) by reverting them. Never rewrites history that has been sent to Matt. Use when the
+  the last save(s) by reverting them. Never rewrites history that has been pushed. Use when the
   user says "undo", "go back", "put it back how it was", "I didn't want that", "scrap that", "revert",
   or runs /stack:undo.
 allowed-tools: Bash, Read, AskUserQuestion
@@ -46,11 +46,11 @@ git revert --no-edit <oldest-sha>..HEAD      # or a single sha
 This adds a new save that reverses those changes — history stays honest. If the reverted saves
 included a migration, the database *structure* isn't automatically reverted: locally run
 `bun run db:reset`; if it was already deployed, tell them "the change to what the app stores stays
-in place for now; Matt can remove it properly" and note it in the report. Conflicts → stop, restore
-the tree (`git revert --abort`), explain in one sentence, and suggest asking Matt.
+in place for now — this one needs Matt to remove it safely from the live data". Conflicts → stop, restore
+the tree (`git revert --abort`), explain in one sentence, and offer to undo the change by hand instead (a new save that puts it back).
 
 ## 3. Confirm visually
 
 If the app is running, `open` the affected page and screenshot it (Playwright MCP if available) so
-they can see it's back. Then `bun run check` to make sure nothing is broken. Offer `/stack:ship` if
-they want the undo sent to Matt.
+they can see it's back. Then `bun run check` to make sure nothing is broken. Offer `/stack:ship` to save
+the undo.

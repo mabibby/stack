@@ -8,7 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { authClient } from "@/lib/auth/client";
 
-export function VerifyForm({ email }: { email: string }) {
+/**
+ * purpose "sign-in": passwordless sign-in by code.
+ * purpose "verify": confirm a new (password) account's email — signs them in and keeps the password.
+ */
+export function VerifyForm({ email, purpose }: { email: string; purpose: "sign-in" | "verify" }) {
   const router = useRouter();
   const [otp, setOtp] = useState("");
   const [busy, setBusy] = useState(false);
@@ -16,7 +20,10 @@ export function VerifyForm({ email }: { email: string }) {
   const verify = async (code: string) => {
     if (code.length !== 6 || busy) return;
     setBusy(true);
-    const { error } = await authClient.signIn.emailOtp({ email, otp: code });
+    const { error } =
+      purpose === "verify"
+        ? await authClient.emailOtp.verifyEmail({ email, otp: code })
+        : await authClient.signIn.emailOtp({ email, otp: code });
     setBusy(false);
     if (error) {
       toast.error(error.message ?? "That code didn't work");
@@ -28,7 +35,10 @@ export function VerifyForm({ email }: { email: string }) {
   };
 
   const resend = async () => {
-    const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+    const { error } = await authClient.emailOtp.sendVerificationOtp({
+      email,
+      type: purpose === "verify" ? "email-verification" : "sign-in",
+    });
     if (error) toast.error(error.message ?? "Couldn't resend");
     else toast.success("New code sent");
   };

@@ -14,11 +14,11 @@ export default async function NotesPage() {
   return (
     <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
       <section>
-        <h1 className="mb-4 font-semibold text-2xl tracking-tight">New note</h1>
+        <h1 className="mb-4 text-2xl font-semibold tracking-tight">New note</h1>
         <NoteForm />
       </section>
       <section>
-        <h2 className="mb-4 font-semibold text-lg">Your notes ({notes.length})</h2>
+        <h2 className="mb-4 text-lg font-semibold">Your notes ({notes.length})</h2>
         <NotesList notes={notes} />
       </section>
     </div>

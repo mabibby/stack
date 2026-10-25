@@ -1,6 +1,2 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+// shadcn's class merger (clsx + tailwind-merge in one package). Import `cn` from here in app code.
+export { cn } from "cn";

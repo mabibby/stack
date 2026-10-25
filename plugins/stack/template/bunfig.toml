@@ -1,3 +1,9 @@
 [test]
 preload = ["./tests/setup.ts"]
 coverage = false
+
+[install]
+# Never install a release younger than 3 days (seconds). Compromised packages are usually caught and
+# pulled within hours; this keeps `bun add <pkg>@latest` from picking one up. The plugin's version
+# check uses the same cooldown.
+minimumReleaseAge = 259200

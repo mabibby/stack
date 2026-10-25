@@ -71,7 +71,7 @@ export function ForgotPasswordForm() {
             </FieldGroup>
           </form>
         )}
-        <p className="mt-6 text-center text-muted-foreground text-sm">
+        <p className="text-muted-foreground mt-6 text-center text-sm">
           <Link href="/sign-in" className="text-foreground underline-offset-4 hover:underline">
             Back to sign in
           </Link>

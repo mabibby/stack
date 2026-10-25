@@ -5,5 +5,6 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "bun run worker"
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 10
+# ALWAYS, with no retry cap: ON_FAILURE gives up after N crashes and the worker then stays down
+# silently (no health check covers it) — emails and jobs just stop.
+restartPolicyType = "ALWAYS"

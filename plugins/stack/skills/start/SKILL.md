@@ -25,7 +25,7 @@ curl -s -m 5 "$app/api/health" || echo APP_DOWN
   `cd ~/projects/<app>` then `claude` (`stack ls` lists their apps), or `/stack:new-app` to make one.
 - **DOCKER_NOT_RUNNING** → `open -a Docker`, poll `docker info` every 5 s for 2 minutes. Tell them
   the whale icon in the menu bar should stop animating.
-- No `.env.local` or containers not up → `bun run setup` (idempotent: starts Postgres/MinIO/Mailpit on
+- No `.env.local` or containers not up → `bun run setup` (idempotent: starts Postgres/RustFS/Mailpit on
   this app's ports, migrates, seeds).
 - **APP_DOWN** → start `bun run dev` in the background (web + worker together). Poll
   `curl -s "$app/api/health"` every 2 s, up to 90 s, until `"ok":true`. If it never comes up, read the
