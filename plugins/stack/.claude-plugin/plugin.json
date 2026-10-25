@@ -1,6 +1,6 @@
 {
   "name": "stack",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Bootstrap and build web apps the Matt way: Bun + Next.js + Postgres/Drizzle + better-auth + pg-boss + shadcn, Docker for local infra, Railway for prod. Skills: setup, new-app, start, feature, ship, status, undo, upgrade, db-change, deploy, doctor. Keeps every project on the latest stable versions. Guard-rail hooks inside stack projects. Terminal side: install.sh + `stack new|ls|update|doctor` (per-app port slots).",
   "author": { "name": "Matt Bibby" },
   "license": "MIT",

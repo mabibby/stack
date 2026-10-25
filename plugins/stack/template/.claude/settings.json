@@ -20,6 +20,9 @@
       "Bash(railway logs*)",
       "Bash(railway domain)",
       "Bash(railway open*)",
+      "Bash(railway config plan*)",
+      "Bash(railway config pull*)",
+      "Bash(railway config migrate status*)",
       "Bash(curl -s -m * */api/health*)",
       "Bash(curl -s -m * */livez*)",
       "Bash(curl -s -m * */health*)",
@@ -70,7 +73,10 @@
       "Bash(gh repo create*)",
       "Bash(gh api *)",
       "Bash(gh pr create*)",
-      "Bash(gh pr merge*)"
+      "Bash(gh pr merge*)",
+      "Bash(railway config apply*)",
+      "Bash(railway config migrate*)",
+      "Bash(railway redeploy*)"
     ]
   }
 }

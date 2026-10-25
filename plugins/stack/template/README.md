@@ -43,6 +43,7 @@ list of emails and/or `@domains` to make the app invitation-only. Leave it empty
 
 ## Deploying
 
-Railway: three services from this repo — `web` (Dockerfile, `railway.toml`), `worker` (same Dockerfile,
-config path `railway.worker.toml`), and a Postgres database, plus a bucket for uploads. `/stack:deploy` walks
-through it. Migrations run on web start (`railway.toml` startCommand). Health: `/api/health`.
+Railway, all declared in `.railway/railway.ts`: `web` and `worker` (same Dockerfile), a Postgres
+database and a bucket for uploads, with every setting and variable. `railway config plan` shows what
+would change, `railway config apply` makes it so; `/stack:deploy` walks through it. Migrations run as
+web's pre-deploy step. Health: `/api/health`.

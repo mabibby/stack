@@ -62,6 +62,8 @@ fi
 [[ "$cmd" =~ gh[[:space:]]+repo[[:space:]]+(delete|archive) ]] && deny "deleting or archiving the GitHub repo."
 [[ "$cmd" =~ gh[[:space:]]+api.*(-X[[:space:]]*DELETE|--method[[:space:]]+DELETE) ]] && deny "DELETE calls to the GitHub API."
 [[ "$cmd" =~ railway[[:space:]]+(delete|down)([[:space:]]|$) ]] && deny "removing services or deployments from the live site."
+[[ "$cmd" =~ railway[[:space:]].*--confirm-destructive ]] && deny "this Railway change deletes live resources or settings. Fix .railway/railway.ts until the plan destroys nothing."
+[[ "$cmd" =~ railway[[:space:]]+config[[:space:]]+partials[[:space:]]+(release|transfer) ]] && deny "changing who owns the live Railway resources."
 
 # ---- filesystem ----------------------------------------------------------
 [[ "$cmd" =~ rm[[:space:]]+-[a-zA-Z]*r[a-zA-Z]*[[:space:]]+(/|~|\$HOME|\.git|\.|\*|drizzle)([[:space:]]|/?$) ]] && deny "recursive delete of the repo, home folder, .git or drizzle/."

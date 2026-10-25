@@ -34,7 +34,7 @@ Rules from `architecture.md` §5.1 / §7 apply. To the user this is "changing wh
 5. **Apply locally.** `bun run db:migrate` then `bun run typecheck` (types flow from the schema).
 6. **Update the code** that reads/writes the changed shape (domain → actions → UI). `bun run check`.
 7. **Commit** the schema + migration + code together (via `/stack:ship`). Production applies it on the
-   next deploy (`railway.toml` runs `db:migrate` before `start`).
+   next deploy (web's pre-deploy step in `.railway/railway.ts` runs `db:migrate`; if it fails, the old version stays live).
 
 ## Recovery
 

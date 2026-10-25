@@ -20,20 +20,21 @@ Tailwind v4 + shadcn/ui · react-hook-form + zod · Biome · Playwright + `bun t
 
 ## Layout
 
-| Path                                              | What lives there                                                                                 |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| `src/app/(auth)`, `(app)`, `api/`                 | Routes. `(app)/layout.tsx` enforces sign-in for everything inside it.                            |
-| `src/app/**/actions.ts`                           | Server actions — thin: validate → auth → domain → revalidate.                                    |
-| `src/lib/domain/<feature>/{queries,mutations}.ts` | **Business rules live here.** Plain functions, take `db`, throw `AppError`s. No Next imports.    |
-| `src/lib/db/schema/*.ts`                          | One file per feature. Use `id()`, `publicId()`, `timestamps()` from `shared.ts`.                 |
-| `src/lib/jobs/`                                   | Queue names + payload types (`queues.ts`), producer (`queue.ts`), handlers.                      |
-| `worker/index.ts`                                 | The background worker process.                                                                   |
-| `src/components/ui`                               | shadcn — generated, don't hand-edit; add more with `bunx shadcn add <name>`.                     |
-| `src/lib/env.ts`                                  | Every env var, zod-validated. Add here FIRST, then `.env.example`.                               |
-| `src/lib/auth/signup-policy.ts`                   | Who may create an account (`SIGNUP_ALLOWLIST`). Empty locally; set in prod for invite-only apps. |
-| `scripts/dev.ts`, `.githooks/`                    | `bun run dev` runs web + worker together. Git hooks refuse pushes to main and force pushes.      |
-| `.github/workflows/ci.yml`                        | The same checks + build + browser tests on every push.                                           |
-| `tests/unit`, `tests/e2e`                         | `bun test` (domain logic, fake db) and Playwright (real browser, real stack).                    |
+| Path                                              | What lives there                                                                                                      |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `src/app/(auth)`, `(app)`, `api/`                 | Routes. `(app)/layout.tsx` enforces sign-in for everything inside it.                                                 |
+| `src/app/**/actions.ts`                           | Server actions — thin: validate → auth → domain → revalidate.                                                         |
+| `src/lib/domain/<feature>/{queries,mutations}.ts` | **Business rules live here.** Plain functions, take `db`, throw `AppError`s. No Next imports.                         |
+| `src/lib/db/schema/*.ts`                          | One file per feature. Use `id()`, `publicId()`, `timestamps()` from `shared.ts`.                                      |
+| `src/lib/jobs/`                                   | Queue names + payload types (`queues.ts`), producer (`queue.ts`), handlers.                                           |
+| `worker/index.ts`                                 | The background worker process.                                                                                        |
+| `src/components/ui`                               | shadcn — generated, don't hand-edit; add more with `bunx shadcn add <name>`.                                          |
+| `src/lib/env.ts`                                  | Every env var, zod-validated. Add here FIRST, then `.env.example`.                                                    |
+| `src/lib/auth/signup-policy.ts`                   | Who may create an account (`SIGNUP_ALLOWLIST`). Empty locally; set in prod for invite-only apps.                      |
+| `scripts/dev.ts`, `.githooks/`                    | `bun run dev` runs web + worker together. Git hooks refuse pushes to main and force pushes.                           |
+| `.railway/railway.ts`                             | The live Railway setup as code (services, database, bucket, variables). Change it, `railway config plan`, then apply. |
+| `.github/workflows/ci.yml`                        | The same checks + build + browser tests on every push.                                                                |
+| `tests/unit`, `tests/e2e`                         | `bun test` (domain logic, fake db) and Playwright (real browser, real stack).                                         |
 
 ## Rules
 

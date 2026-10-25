@@ -23,7 +23,12 @@ git log --oneline -8
 ls docs/features 2>/dev/null
 gh run list --branch "$branch" --limit 1 --json conclusion,status,displayTitle 2>/dev/null || echo no-ci
 app=$(grep -E "^APP_URL=" .env.local | cut -d= -f2); curl -s -m 5 "$app/api/health" >/dev/null && echo "app-running $app" || echo app-not-running
-if railway status >/dev/null 2>&1; then railway status | head -5; for s in web worker; do echo "$s: $(railway service status --service $s 2>&1 | head -3 | tr '\n' ' ')"; done; else echo not-linked-to-railway; fi
+if railway status >/dev/null 2>&1; then
+  railway status | head -5
+  names=$(grep -E '^const NAMES' .railway/railway.ts 2>/dev/null | grep -oE '(web|worker): "[^"]+"' | cut -d'"' -f2); names=${names:-"web worker"}
+  for s in $names; do echo "$s: $(railway service status --service "$s" 2>&1 | head -3 | tr '\n' ' ')"; done
+  railway config plan --detailed-exit-code >/dev/null 2>&1; case $? in 0) echo "railway-matches-file";; 2) echo "RAILWAY_DRIFT";; *) echo "railway-plan-failed";; esac
+else echo not-linked-to-railway; fi
 ```
 
 Report as short bullets, translated:
@@ -39,6 +44,11 @@ Report as short bullets, translated:
   with the live URL if Railway is linked (`railway domain` / `railway status`).
 - **Checks on GitHub** — if the last run failed, that save is NOT live ("the checks caught a problem
   with <subject>; the live site is still on the previous version") and offer to fix it.
+- **Live setup matches the app?** `RAILWAY_DRIFT` = someone changed Railway outside `.railway/railway.ts`.
+  Say it in one line ("a live setting was changed by hand"), show `railway config plan` in plain words,
+  and fix it per `/stack:deploy` → Later. No `.railway/railway.ts` yet (or `railway-plan-failed` with
+  "managed by railway.toml") → offer `/stack:deploy` → Adopt; before 2026-12-01 it's urgent (the old
+  files stop working then).
 - **Live app healthy?** — if linked, both `web` and `worker` must show a successful, running deployment.
   The worker has no public page, so this is the only place a dead worker shows up ("emails and
   background jobs have stopped"). If either is crashed or failed: read `railway logs --service <s>`

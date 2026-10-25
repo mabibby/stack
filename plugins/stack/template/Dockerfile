@@ -1,7 +1,7 @@
 # Multi-stage build. Node runs Next.js (as it does on your machine); Bun installs deps and runs the
 # worker. The SAME image serves both Railway services:
-#   web    → start command: bun run db:migrate && bun run start   (railway.toml)
-#   worker → start command: bun run worker                        (railway.worker.toml)
+#   web    → pre-deploy: bun run db:migrate · start: bun run start   (.railway/railway.ts)
+#   worker → start: bun run worker                                    (.railway/railway.ts)
 # Versions: newest Node LTS + newest Bun, kept current by /stack:upgrade.
 FROM node:24-trixie-slim AS base
 COPY --from=oven/bun:1.4.4 /usr/local/bin/bun /usr/local/bin/bun

@@ -270,9 +270,14 @@ Don't unit-test React components or Drizzle queries; the e2e spec covers them. S
 
 ## 10. Deployment (Railway)
 
-One Railway project per app: **`web`** (Dockerfile → `railway.toml`; start = migrate then serve;
-health `/api/health`), **`worker`** (same Dockerfile; config path `railway.worker.toml`; start
-`bun run worker`), **Postgres**, and a **bucket** (S3-compatible). Env vars on both app services:
+One Railway project per app, **declared in `.railway/railway.ts`** (Railway Infrastructure as Code,
+`railway/iac`; `railway config plan` / `apply`): **`web`** (Dockerfile; pre-deploy = `db:migrate`,
+start = `bun run start`, health `/api/health`), **`worker`** (same Dockerfile; start `bun run worker`,
+restart `ALWAYS`), **Postgres**, and a **bucket** (S3-compatible, wired by reference). Only secrets
+(`BETTER_AUTH_SECRET`, `RESEND_API_KEY`) are set by hand; the file `preserve()`s them. A plan that
+destroys anything is never applied (the guard blocks `--confirm-destructive`). Apps deployed before the
+file existed are adopted with `railway config pull` (`/stack:deploy` → Adopt). `railway.toml` is the
+deprecated Config as Code — Railway stops reading it on 2026-12-01. Env vars on both app services:
 `APP_URL`, `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `BETTER_AUTH_SECRET`, `EMAIL_FROM`,
 `RESEND_API_KEY`, `SIGNUP_ALLOWLIST`, `S3_*` (from the bucket), `LOG_LEVEL=info`,
 `NODE_ENV=production`. Deploy branch is `dev` (the builder sees their work live; `main` is the reviewed

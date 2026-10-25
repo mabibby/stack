@@ -83,6 +83,10 @@ For each MAJOR package:
   `.github/workflows/*.yml`. If this app has no `.github/workflows/ci.yml`, copy it from
   `${CLAUDE_PLUGIN_ROOT}/template/.github/workflows/ci.yml` and, if the app is live, walk them through
   switching on "Wait for CI" in Railway (`/stack:deploy` step 7c).
+- **Railway setup as code**: if the app has `railway.toml` / `railway.worker.toml` and no
+  `.railway/railway.ts`, it's on the deprecated setup (Railway stops reading those files on
+  2026-12-01). If it's live, run `/stack:deploy` → Adopt now; if it isn't live yet, copy the
+  template's `.railway/railway.ts`, `bun add -d railway@latest`, and delete the two toml files.
 - **Plugin** behind (check says "stack toolkit …"): tell the user to run `stack update` in Terminal and
   reopen Claude Code. That's the only step they do themselves.
 
